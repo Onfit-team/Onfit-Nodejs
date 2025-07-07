@@ -1,5 +1,4 @@
 # Onfit-Nodejs
-geotdam-server
 📌 Branch 전략
 Branch 종류
 main 배포용 브랜치 (항상 안정적인 상태 유지, 허가없이 건들지 말기)
