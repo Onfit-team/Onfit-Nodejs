@@ -1,6 +1,6 @@
 # Onfit-Nodejs
-📌 Branch 전략
-Branch 종류
+📌 Branch 전략\n
+Branch 종류\n
 main 배포용 브랜치 (항상 안정적인 상태 유지, 허가없이 건들지 말기)
 develop 기능 개발 통합 브랜치 (pull request하고 동료들에게 merge요청, 확인이 오래걸리면 스스로 merge)
 feature/{이슈번호}{간단한설명} 새로운 기능 개발 브랜치
