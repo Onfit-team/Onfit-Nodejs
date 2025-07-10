@@ -7,6 +7,4 @@ const router = express.Router();
 //router.get('/common/date', authenticateJWT, getCurrentDateController);
 router.get('/common/date', getCurrentDateController);
 
-
-
 export default router;

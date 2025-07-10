@@ -5,6 +5,7 @@ import express from 'express';
 import passport from './modules/user/kakao.strategy.js'; // 초기화
 import userRoutes from './routes/user.route.js';
 import homeRouter from './routes/home.route.js';
+import outfitRoutes from './routes/outfit.route.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 
 
@@ -14,6 +15,7 @@ app.use(passport.initialize());
 
 app.use('/user', userRoutes);
 app.use(homeRouter);
+app.use(outfitRoutes);
 
 app.use(errorHandler); // 라우터 맨 아래에 추가
 
