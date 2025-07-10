@@ -18,5 +18,10 @@ export const userService = {
     });
 
     return { token, user };
+  },
+
+  async updateNickname(userId, newNickname) {
+    return await userRepository.updateNickname(userId, newNickname);
   }
+
 };
