@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import passport from 'passport';
 import { Strategy as KakaoStrategy } from 'passport-kakao';
 import { userService } from './user.service.js';
