@@ -7,5 +7,11 @@ export const userRepository = {
   },
   async create(data) {
     return await prisma.user.create({ data });
+  },
+   async updateNickname(userId, nickname) {
+    return await prisma.user.update({
+      where: { id: userId },
+      data: { nickname }
+    });
   }
 };
