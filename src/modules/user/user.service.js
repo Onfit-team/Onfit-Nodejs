@@ -22,6 +22,14 @@ export const userService = {
 
   async updateNickname(userId, newNickname) {
     return await userRepository.updateNickname(userId, newNickname);
+  },
+
+  async checkNicknameAvailability(nickname) {
+  if (!nickname || nickname.trim() === "") {
+    throw new Error("닉네임이 유효하지 않습니다.");
   }
+  const taken = await userRepository.isNicknameTaken(nickname);
+  return taken;
+}
 
 };
