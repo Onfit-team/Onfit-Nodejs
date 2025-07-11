@@ -28,6 +28,8 @@ export const createOutfitController = async (req, res, next) => {
   try {
     const { date, mainImage } = req.body;
     const { moodTags = [], purposeTags = [] } = req.body;
+    const userId = req.user.userId; // JWT에서 사용자 ID 추출
+    
     
     // 필수 필드 검증
     if (!date || !mainImage) {
@@ -40,8 +42,8 @@ export const createOutfitController = async (req, res, next) => {
       throw new InvalidInputError("태그는 최대 3개까지만 선택할 수 있습니다.");
     }
     
-    const outfit = await createOutfit(req.body);
-    
+    const outfit = await createOutfit({ ...req.body, userId });
+     
     res.status(201).json(new CreatedSuccess(outfit, "아웃핏 등록 성공"));
   } catch (err) {
     next(new InvalidInputError("아웃핏 등록 실패", err.message));
