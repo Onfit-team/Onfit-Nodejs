@@ -112,3 +112,10 @@ export class AuthUnauthorizedError extends UnauthorizedError {
     this.errorCode = "AUTH_UNAUTHORIZED";
   }
 }
+
+export class AuthNicknameCheckFailedError extends InvalidInputError {
+  constructor(reason = "닉네임 중복 확인에 실패했습니다", data = null) {
+    super(reason, data);
+    this.errorCode = "AUTH_NICKNAME_CHECK_FAILED";
+  }
+}
