@@ -2,7 +2,7 @@ import express from 'express';
 import passport from '../modules/user/kakao.strategy.js';
 import authenticateJWT from '../middlewares/auth.middleware.js';
 
-import { updateNickname, kakaoCallback } from '../modules/user/user.controller.js';
+import { updateNickname, kakaoCallback, checkNickname, } from '../modules/user/user.controller.js';
 
 const router = express.Router();
 
@@ -17,5 +17,6 @@ router.get(
 
 // 닉네임 수정 (JWT 필요)
 router.patch('/auth/signup', authenticateJWT, updateNickname);
-
+// 닉네임 중복 확인
+router.get('/auth/check-nickname', checkNickname);
 export default router;
