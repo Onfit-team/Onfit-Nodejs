@@ -19,6 +19,7 @@ app.use(homeRouter);
 app.use(outfitRoutes);
 app.use('/calendar', calendarRoute);
 
+
 app.use(errorHandler); // 라우터 맨 아래에 추가
 
 app.listen(3000, () => {
