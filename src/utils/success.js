@@ -52,3 +52,10 @@ export class AuthUpdateSuccess extends OkSuccess {
     this.code = "AUTH_UPDATE_SUCCESS";
   }
 }
+
+export class AuthNicknameCheckSuccess extends OkSuccess {
+  constructor(result = null) {
+    super(result, "닉네임 중복 확인 성공");
+    this.code = "AUTH_NICKNAME_CHECK_SUCCESS";
+  }
+}
