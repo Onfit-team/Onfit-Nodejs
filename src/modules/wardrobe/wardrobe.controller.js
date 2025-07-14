@@ -1,12 +1,28 @@
-import { getAllWardrobeItems } from './wardrobe.service.js';
+// src/modules/wardrobe/wardrobe.controller.js
+import * as wardrobeService from './wardrobe.service.js';
+import { OkSuccess } from '../../utils/success.js';
 
 export const getWardrobeItemsController = async (req, res, next) => {
   try {
-    const userId = req.user.id; // 로그인된 사용자 정보
-    const items = await getAllWardrobeItems(userId);
+    const userId = req.user.userId;
 
-    res.json(items); // 응답 포맷 그대로 전송
+    const items = await wardrobeService.getAllWardrobeItems(userId);
+
+    return res.status(200).json(new OkSuccess(items));
   } catch (err) {
-    next(err); // 에러 미들웨어로 전달
+    next(err);
+  }
+};
+
+export const getWardrobeItemDetail = async (req, res, next) => {
+  try {
+    const { itemId } = req.params;
+    const userId = req.user.userId;
+
+    const item = await wardrobeService.getWardrobeItemDetail(userId, parseInt(itemId));
+
+    return res.status(200).json(new OkSuccess(item));
+  } catch (err) {
+    next(err);
   }
 };
