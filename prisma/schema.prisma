@@ -23,6 +23,8 @@ model User {
   items        Item[]
   outfits      Outfit[]
   outfitLikes  OutfitLike[]
+  location     Location? @relation(fields: [locationId], references: [id])  
+  locationId   Int?      
 }
 
 model Item {
@@ -48,6 +50,7 @@ model Location {
   sigungu  String
   dong     String
   code     String   @unique
+  users    User[]
   weather  Weather[]
   outfits  Outfit[]
 }
