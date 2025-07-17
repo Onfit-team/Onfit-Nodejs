@@ -49,7 +49,7 @@ model Location {
   sido     String
   sigungu  String
   dong     String
-  code     String   @unique
+  code     String?   @unique
   users    User[]
   weather  Weather[]
   outfits  Outfit[]
