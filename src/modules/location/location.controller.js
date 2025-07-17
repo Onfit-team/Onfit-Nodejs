@@ -1,7 +1,7 @@
 import { validateSearchQuery } from "./location.dto.js";
 import { searchLocationService, saveLocationService, getMyLocationService, saveCurrentLocationService } from "./location.service.js";
 import { OkSuccess, CreatedSuccess } from "../../utils/success.js";
-import { InvalidInputError } from "../../utils/error.js";
+import { InvalidInputError, LocationNotFoundError} from "../../utils/error.js";
 
 export const searchLocation = async (req, res, next) => {
   try {
@@ -44,9 +44,24 @@ export const saveCurrentLocation = async (req, res, next) => {
     const { latitude, longitude } = req.body;
     const userId = req.user.userId;
 
+
+    // 위도/경도 누락 체크
+    if (latitude == null || longitude == null) {
+      throw new InvalidInputError("위치 정보가 누락되었습니다.");
+    }
+
     const result = await saveCurrentLocationService(userId, latitude, longitude);
     res.status(201).json(new CreatedSuccess(result));
   } catch (err) {
+    // 좌표 오류 판단 (카카오 응답 없음 등)
+    if (err.name === "LocationNotFoundError") {
+      return res.status(404).json({
+        isSuccess: false,
+        code: err.errorCode,
+        message: err.message,
+        result: null
+      });
+    }
     next(err);
   }
 };
