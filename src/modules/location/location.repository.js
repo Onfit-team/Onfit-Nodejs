@@ -32,12 +32,12 @@ export const findUserWithLocation = async (userId) => {
 export const setUserLocationByCode = async (userId, locationData) => {
   let location = null;
 
-  // ✅ code가 있을 때만 중복 조회
+  // code가 있을 때만 중복 조회
   if (locationData.code) {
     location = await findLocationByCode(locationData.code);
   }
 
-  // ✅ code가 없거나, 조회 결과 없으면 새로 생성
+  // code가 없거나, 조회 결과 없으면 새로 생성
   if (!location) {
     location = await createLocation(
       locationData.sido,

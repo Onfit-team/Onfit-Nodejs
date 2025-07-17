@@ -119,3 +119,13 @@ export class AuthNicknameCheckFailedError extends InvalidInputError {
     this.errorCode = "AUTH_NICKNAME_CHECK_FAILED";
   }
 }
+
+export class LocationNotFoundError extends Error {
+  constructor(message = "해당 좌표에 대한 위치 정보를 찾을 수 없습니다.", data = null) {
+    super(message);
+    this.name = "LocationNotFoundError";
+    this.statusCode = 404;
+    this.errorCode = "LOC404";
+    this.data = data;
+  }
+}
