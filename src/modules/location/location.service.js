@@ -1,10 +1,9 @@
 import axios from "axios";
 import dotenv from "dotenv";
-import { NotExistsError, AlreadyExistsError } from "../../utils/error.js";
+import { NotExistsError, AlreadyExistsError, LocationNotFoundError } from "../../utils/error.js";
 import { PrismaClient } from '@prisma/client';
 import { LocationDTO, validateCoordinates } from "./location.dto.js";
 import { findUserWithLocation, setUserLocationByCode } from "./location.repository.js";
-//import { CreatedSuccess } from "../../utils/success.js";
 
 const prisma = new PrismaClient();
 dotenv.config();
@@ -117,7 +116,7 @@ export const saveCurrentLocationService = async (userId, lat, lng) => {
 
   const documents = kakaoRes.data.documents;
   if (!documents || documents.length === 0) {
-    throw new NotExistsError("해당 좌표에 대한 주소 정보를 찾을 수 없습니다.");
+    throw new LocationNotFoundError(undefined, { latitude, longitude });
   }
 
   const address = documents[0].address;
@@ -127,11 +126,6 @@ export const saveCurrentLocationService = async (userId, lat, lng) => {
     address.h_code || 
     address.region_3depth_h_code || 
     null;
-
-  // if (!code) {
-  //   console.log("⚠️ 법정동 코드 없음:", address);
-  //   throw new NotExistsError("법정동 코드가 없습니다.", { address });
-  // }
 
   const location = await setUserLocationByCode(userId, {
     sido: address.region_1depth_name,
