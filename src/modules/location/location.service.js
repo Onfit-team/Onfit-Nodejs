@@ -1,8 +1,10 @@
 import axios from "axios";
-import { NotExistsError, AlreadyExistsError } from "../../utils/error.js";
 import dotenv from "dotenv";
+import { NotExistsError, AlreadyExistsError } from "../../utils/error.js";
 import { PrismaClient } from '@prisma/client';
-import { CreatedSuccess } from "../../utils/success.js";
+import { LocationDTO, validateCoordinates } from "./location.dto.js";
+import { findUserWithLocation, setUserLocationByCode } from "./location.repository.js";
+//import { CreatedSuccess } from "../../utils/success.js";
 
 const prisma = new PrismaClient();
 dotenv.config();
@@ -90,4 +92,61 @@ export const saveLocationService = async (userId, query) => {
     }
   };
 
+};
+
+export const getMyLocationService = async (userId) => {
+  const user = await findUserWithLocation(userId);
+
+  if (!user?.location) {
+    throw new NotExistsError("사용자 위치가 설정되어 있지 않습니다.", { userId });
+  }
+
+  return new LocationDTO(user.location);
+};
+
+export const saveCurrentLocationService = async (userId, lat, lng) => {
+  const { latitude, longitude } = validateCoordinates({ latitude: lat, longitude: lng });
+
+  // 1. 좌표 → 주소 변환 (카카오 Reverse Geocoding)
+  const kakaoRes = await axios.get("https://dapi.kakao.com/v2/local/geo/coord2address.json", {
+    headers: {
+      Authorization: `KakaoAK ${KAKAO_KEY}`,
+    },
+    params: { x: longitude, y: latitude },
+  });
+
+  const documents = kakaoRes.data.documents;
+  if (!documents || documents.length === 0) {
+    throw new NotExistsError("해당 좌표에 대한 주소 정보를 찾을 수 없습니다.");
+  }
+
+  const address = documents[0].address;
+
+  const code = 
+    address.b_code || 
+    address.h_code || 
+    address.region_3depth_h_code || 
+    null;
+
+  // if (!code) {
+  //   console.log("⚠️ 법정동 코드 없음:", address);
+  //   throw new NotExistsError("법정동 코드가 없습니다.", { address });
+  // }
+
+  const location = await setUserLocationByCode(userId, {
+    sido: address.region_1depth_name,
+    sigungu: address.region_2depth_name,
+    dong: address.region_3depth_name,
+    code,
+  });
+
+  return {
+    userId,
+    location: {
+      sido: location.sido,
+      sigungu: location.sigungu,
+      dong: location.dong,
+      code: location.code ?? null,
+    },
+  };
 };
