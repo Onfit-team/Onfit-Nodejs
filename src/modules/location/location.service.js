@@ -80,7 +80,7 @@ export const saveLocationService = async (userId, query) => {
     data: { locationId: location.id }
   });
 
-  return new CreatedSuccess({
+  return {
     userId,
     location: {
       sido: location.sido,
@@ -88,5 +88,6 @@ export const saveLocationService = async (userId, query) => {
       dong: location.dong,
       code: location.code
     }
-  });
+  };
+
 };
