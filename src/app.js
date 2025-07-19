@@ -9,6 +9,8 @@ import outfitRoutes from './routes/outfit.route.js';
 import calendarRoute from './routes/calendar.route.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import wardrobeRouter from './routes/wardrobe.route.js';
+import locationRouter from "./routes/location.route.js";
+
 
 const app = express();
 app.use(express.json());
@@ -19,6 +21,7 @@ app.use(homeRouter);
 app.use(outfitRoutes);
 app.use('/calendar', calendarRoute);
 app.use('/wardrobe', wardrobeRouter);
+app.use('/location', locationRouter);
 
 app.use(errorHandler); // 라우터 맨 아래에 추가
 
