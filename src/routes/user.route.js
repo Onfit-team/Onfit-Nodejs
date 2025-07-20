@@ -1,6 +1,6 @@
 import express from 'express';
 import passport from '../modules/user/kakao.strategy.js';
-import authenticateJWT from '../middlewares/auth.middleware.js';
+import { authenticateJWT } from '../middlewares/auth.middleware.js';
 
 import { updateNickname, kakaoCallback, checkNickname, } from '../modules/user/user.controller.js';
 
