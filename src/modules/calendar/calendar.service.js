@@ -3,7 +3,7 @@ import { NotExistsError } from '../../utils/error.js';
 import path from 'path';
 import fs from 'fs';
 
-// 🖼 메인 이미지 정보 반환
+// 메인 이미지 정보 반환
 export const getMainImageInfo = async (id, baseUrl) => {
   const outfit = await calendarRepository.findById(id);
   if (!outfit) throw new NotExistsError("해당 Outfit이 없습니다.");
@@ -15,7 +15,7 @@ export const getMainImageInfo = async (id, baseUrl) => {
   };
 };
 
-// 📝 메모 정보 반환
+// 메모 정보 반환
 export const getMemoInfo = async (id) => {
   const outfit = await calendarRepository.findById(id);
   if (!outfit) throw new NotExistsError("해당 Outfit이 없습니다.");
@@ -27,7 +27,7 @@ export const getMemoInfo = async (id) => {
   };
 };
 
-// ✏️ Outfit 수정
+// Outfit 수정
 export const modifyOutfit = async (id, update) => {
   const outfit = await calendarRepository.findById(id);
   if (!outfit) throw new NotExistsError("해당 Outfit이 없습니다.");
@@ -53,7 +53,7 @@ export const modifyOutfit = async (id, update) => {
   };
 };
 
-// 🗑 Outfit 삭제
+// Outfit 삭제
 export const removeOutfit = async (id) => {
   const exists = await calendarRepository.existsById(id);
   if (!exists) throw new NotExistsError("해당 Outfit이 없습니다.");
