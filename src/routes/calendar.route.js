@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import authenticateJWT from '../middlewares/auth.middleware.js'; // ✅ default import
+import { authenticateJWT } from '../middlewares/auth.middleware.js'; // ✅ default import
 import * as calendarController from '../modules/calendar/calendar.controller.js';
 
 const router = express.Router();
