@@ -1,6 +1,6 @@
 import express from "express";
 import { saveCurrentLocation, searchLocation, saveLocation, getMyLocation } from "../modules/location/location.controller.js";
-import authenticateJWT from "../middlewares/auth.middleware.js";
+import { authenticateJWT } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 router.get("/search", searchLocation);
