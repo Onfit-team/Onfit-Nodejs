@@ -48,12 +48,20 @@ export const saveLocationService = async (userId, query) => {
     throw new NotExistsError("주소 결과가 없습니다.", { query });
   }
 
-  const address = documents[0].address;
+  //const address = documents[0].address;
+   // ✅ document 대신 다른 변수명 사용
+  const firstDocument = documents[0];
+  const address = firstDocument.address;
   const code = address.b_code || address.h_code || address.region_3depth_h_code;
 
   if (!code) {
     throw new NotExistsError("법정동 코드가 없습니다.", { address });
   }
+
+   // ✅ 변수명 변경
+  const latitude = parseFloat(firstDocument.y);
+  const longitude = parseFloat(firstDocument.x);
+
 
   // 2. DB에 이미 있는지 확인, 없으면 저장
   let location = await prisma.location.findUnique({ where: { code } });
@@ -64,7 +72,9 @@ export const saveLocationService = async (userId, query) => {
         sido: address.region_1depth_name,
         sigungu: address.region_2depth_name,
         dong: address.region_3depth_name,
-        code
+        code,
+        latitude,
+        longitude
       }
     });
   }
@@ -132,6 +142,8 @@ export const saveCurrentLocationService = async (userId, lat, lng) => {
     sigungu: address.region_2depth_name,
     dong: address.region_3depth_name,
     code,
+    latitude,
+    longitude
   });
 
   return {
