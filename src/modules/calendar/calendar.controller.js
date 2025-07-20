@@ -2,7 +2,7 @@ import * as calendarService from './calendar.service.js';
 import { OkSuccess } from '../../utils/success.js';
 import { InvalidInputError } from '../../utils/error.js';
 
-// 🖼 메인 이미지 조회
+// 메인 이미지 조회
 export const getOutfitMainImage = async (req, res, next) => {
   try {
     const { outfit_id } = req.params;
@@ -14,7 +14,7 @@ export const getOutfitMainImage = async (req, res, next) => {
   }
 };
 
-// 📝 메모 조회
+// 메모 조회
 export const getOutfitMemo = async (req, res, next) => {
   try {
     const { outfit_id } = req.params;
@@ -25,7 +25,7 @@ export const getOutfitMemo = async (req, res, next) => {
   }
 };
 
-// ✏️ 메모/이미지 수정
+// 메모/이미지 수정
 export const updateOutfit = async (req, res, next) => {
   try {
     const body = req.body || {};
@@ -47,7 +47,7 @@ export const updateOutfit = async (req, res, next) => {
   }
 };
 
-// 🗑 삭제
+// 삭제
 export const deleteOutfit = async (req, res, next) => {
   try {
     const { outfit_id } = req.params;
