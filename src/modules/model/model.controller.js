@@ -1,26 +1,21 @@
-import fs from 'fs';
-import path from 'path';
+import { trainYoloModel } from './model.service.js';
 import { CreatedSuccess } from '../../utils/success.js';
 
-// [POST] /model/upload
-export const uploadBestModel = async (req, res, next) => {
+export const trainModel = async (req, res, next) => {
   try {
-    const MODEL_DIR = path.join(process.cwd(), 'yolo_models');
-    const MODEL_PATH = path.join(MODEL_DIR, 'best.pt');
-    if (!req.file) return res.status(400).json({ error: '모델 파일이 필요합니다.' });
-
-    if (!fs.existsSync(MODEL_DIR)) fs.mkdirSync(MODEL_DIR, { recursive: true });
-
-    // 기존 모델 백업(선택)
-    if (fs.existsSync(MODEL_PATH)) {
-      const backupName = `best_${Date.now()}.pt`;
-      fs.renameSync(MODEL_PATH, path.join(MODEL_DIR, backupName));
+    // 이미 미들웨어에서 인증/권한 체크됨!
+    const { datasetId, mode } = req.body;
+    if (!datasetId || !mode) {
+      // 기존 에러 유틸
+      throw new Error("datasetId, mode 값이 필요합니다.");
     }
 
-    // 새 모델로 교체
-    fs.renameSync(req.file.path, MODEL_PATH);
+    const result = await trainYoloModel(datasetId, mode);
 
-    res.status(201).json(new CreatedSuccess({ path: MODEL_PATH }, "best.pt 업로드 및 교체 성공"));
+    // 기존 유틸 응답
+    res.status(201).json(
+      new CreatedSuccess(result, "TRAINING_STARTED")
+    );
   } catch (err) {
     next(err);
   }

@@ -1,16 +1,30 @@
 import Joi from 'joi';
 
 export const itemCreateRequestSchema = Joi.object({
-  category: Joi.string().valid("상의", "하의", "아우터", "신발").required(),
-  color: Joi.string().required(),
-  season: Joi.string().valid("봄", "여름", "가을", "겨울").required(),
+  category: Joi.string().valid(
+    "상의", "하의", "원피스", "아우터", "신발", "액세서리"
+  ).required(),
+  color: Joi.string().valid(
+    "화이트", "블랙", "그레이", "베이지/브라운", "네이비/블루",
+    "레드/핑크", "오렌지/옐로우", "그린", "퍼플", "멀티/패턴"
+  ).required(),
+  season: Joi.string().valid(
+    "간절기(봄/가을)", "여름", "겨울"
+  ).required(),
   purchase_info: Joi.string().optional()
 });
 
 export const itemUpdateRequestSchema = Joi.object({
-  category: Joi.string().valid("상의", "하의", "아우터", "신발").optional(),
-  color: Joi.string().optional(),
-  season: Joi.string().valid("봄", "여름", "가을", "겨울").optional(),
+  category: Joi.string().valid(
+    "상의", "하의", "원피스", "아우터", "신발", "액세서리"
+  ).optional(),
+  color: Joi.string().valid(
+    "화이트", "블랙", "그레이", "베이지/브라운", "네이비/블루",
+    "레드/핑크", "오렌지/옐로우", "그린", "퍼플", "멀티/패턴"
+  ).optional(),
+  season: Joi.string().valid(
+    "간절기(봄/가을)", "여름", "겨울"
+  ).optional(),
   purchase_info: Joi.string().optional()
 });
 
