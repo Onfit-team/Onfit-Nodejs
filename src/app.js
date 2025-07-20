@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config();
+const result = dotenv.config();
 
 import express from 'express';
 import passport from './modules/user/kakao.strategy.js';
