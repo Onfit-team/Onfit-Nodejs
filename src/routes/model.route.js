@@ -1,17 +1,9 @@
-import express from 'express';
-import multer from 'multer';
+import { Router } from 'express';
+import { trainModel } from '../modules/model/model.controller.js';
 import { authenticateJWT, requireAdmin } from '../middlewares/auth.middleware.js';
-import * as modelController from '../modules/model/model.controller.js';
 
-const router = express.Router();
-const upload = multer({ dest: 'uploads/' });
+const router = Router();
 
-router.post(
-  '/upload',
-  authenticateJWT,
-  requireAdmin,      // 관리자 권한 체크
-  upload.single('model'),
-  modelController.uploadBestModel
-);
+router.post('/train', authenticateJWT, requireAdmin, trainModel);
 
 export default router;
