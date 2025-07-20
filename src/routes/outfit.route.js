@@ -4,7 +4,7 @@ import {
   getFeelsLikeTempController,
   getTagsController
 } from '../modules/outfit/outfit.controller.js';
-import authenticateJWT from '../middlewares/auth.middleware.js';
+import { authenticateJWT } from '../middlewares/auth.middleware.js';
 
 
 const router = express.Router();
