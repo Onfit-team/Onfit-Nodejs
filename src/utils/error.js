@@ -129,3 +129,17 @@ export class LocationNotFoundError extends Error {
     this.data = data;
   }
 }
+
+//사용자 날씨 위치 정보 없음 에러 404
+export class UserLocationNotFoundError extends CustomError {
+  constructor(reason = "사용자의 위치 정보가 설정되지 않았습니다.", data = null) {
+    super(reason, "USER_LOCATION_NOT_FOUND", 404, data);
+  }
+}
+
+//날씨 API관련 에러 500
+export class WeatherApiError extends CustomError {
+  constructor(reason = "날씨 정보 조회에 실패했습니다.", data = null) {
+    super(reason, "WEATHER_API_ERROR", 500, data);
+  }
+}
