@@ -12,6 +12,7 @@ import wardrobeRouter from './routes/wardrobe.route.js';
 import itemsRouter from './routes/item.route.js';
 import modelRouter from './routes/model.route.js';
 import locationRouter from "./routes/location.route.js";
+import communityRouter from './routes/community.route.js';
 
 
 const app = express();
@@ -26,6 +27,7 @@ app.use('/wardrobe', wardrobeRouter);
 app.use('/location', locationRouter);
 app.use('/items', itemsRouter);
 app.use('/model', modelRouter);
+app.use('/community', communityRouter);
 
 app.use(errorHandler);
 
