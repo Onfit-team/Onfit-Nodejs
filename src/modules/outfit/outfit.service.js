@@ -5,7 +5,7 @@ import { UserLocationNotFoundError, WeatherApiError } from '../../utils/error.js
 
 const prisma = new PrismaClient();
 
-// ✅ 실제 위치 API 호출로 수정
+// 실제 위치 API 호출로 수정
 async function getCurrentLocation(userId) {
   const userWithLocation = await findUserWithLocation(userId);
   
@@ -25,37 +25,64 @@ async function getCurrentLocation(userId) {
   };
 }
 
-// ✅ 위치 정보 테스트 함수
-export async function testLocationConnection(userId) {
+// 실제 날씨 API 호출로 수정
+async function getCurrentWeather(userId) {
   try {
-    const location = await getCurrentLocation(userId);
-    const weather = await getCurrentWeather(userId);
-    
+    const weatherData = await getCurrentWeatherByUserId(userId);
     return {
-      success: true,
-      location: location,
-      weather: weather,
-      message: '위치 및 날씨 정보 연동 성공'
+      tempAvg: weatherData.weather.tempAvg,
+      tempMin: weatherData.weather.tempMin,
+      tempMax: weatherData.weather.tempMax,
+      feelsLike: weatherData.weather.feelsLike,
+      status: weatherData.weather.status,
+      precipitation: weatherData.weather.precipitation
     };
   } catch (error) {
-    return {
-      success: false,
-      error: error.message,
-      message: '위치 또는 날씨 정보 연동 실패'
-    };
+    throw new WeatherApiError('현재 날씨 정보를 가져올 수 없습니다.');
   }
 }
 
-// TODO: 나중에 실제 API로 교체
-async function getCurrentWeather(locationId) {
-  // 실제로는 날씨 API 호출  
-  // const weather = await weatherAPI.getCurrentWeather(locationId);
-  return {
-    tempAvg: 18.5,
-    tempMin: 15.2,
-    tempMax: 22.1,
-    status: "맑음"
-  };
+export async function getSimilarTemperatureOutfits(userId, tempRange = 2) {
+  try {
+    // 1. 현재 날씨 정보 가져오기
+    const currentWeather = await getCurrentWeather(userId);
+    const targetTemp = currentWeather.tempAvg;
+    
+    // 2. ±2도 범위 내의 과거 outfit 기록 조회 
+    const similarOutfits = await prisma.outfit.findMany({
+      where: {
+        userId: userId,
+        weatherTempAvg: {
+          gte: targetTemp - tempRange,
+          lte: targetTemp + tempRange
+        }
+      },
+      select: {
+        id: true,
+        feelsLikeTemp: true,  
+        mainImage: true        // outfit 이미지
+      },
+      orderBy: {
+        date: 'desc'
+      },
+      take: 10  // 최대 10개
+    });
+
+    // 간소화된 응답 - 체감온도와 이미지만
+    return {
+      currentTemp: currentWeather.tempAvg,
+      outfits: similarOutfits.map(outfit => ({
+        id: outfit.id,
+        feelsLikeTemp: outfit.feelsLikeTemp,  // 체감온도
+        image: outfit.mainImage                // outfit 이미지
+      }))
+    };
+  } catch (error) {
+    if (error instanceof UserLocationNotFoundError || error instanceof WeatherApiError) {
+      throw error;
+    }
+    throw new Error('비슷한 온도의 옷차림 기록을 가져오는데 실패했습니다.');
+  }
 }
 
 
@@ -103,57 +130,44 @@ export function getAllTags() {
   };
 }
 
-// 임시 ID 카운터
-let outfitIdCounter = 1;
-
+// 실제 DB 저장 로직으로 완성
 export async function createOutfit(outfitData) {
   const { 
+    userId,           //userId 파라미터 추가
     date, 
     mainImage, 
     memo = null,
-    feelsLikeTemp = null,
+    feelsLikeTemp = null,  // 사용자가 입력한 실제 체감온도
     moodTags = [],
     purposeTags = []
   } = outfitData;
   
-  const location = await getCurrentLocation();
-  const weather = await getCurrentWeather(location.id);
+   console.log('🔍 추출된 userId:', userId);
   
-  // 임시 데이터 반환 (DB 저장 없이)
-  const outfit = {
-    id: outfitIdCounter++,
-    userId: 1,
-    locationId: location.id,
-    date,
-    weatherTempAvg: weather.tempAvg,
-    mainImage,
-    memo,
-    moodTags,
-    purposeTags,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
+  if (!userId) {
+    throw new Error('userId가 제공되지 않았습니다.');
+  }
+
+  // 1. 위치 정보 가져오기
+  const location = await getCurrentLocation(userId);
   
-  return outfit;
+  // 2. 현재 날씨 정보 가져오기
+  const weather = await getCurrentWeather(userId);
   
-  // TODO: DB 저장 로직 (나중에 Location, User 데이터 준비 후 활성화)
-  /*
-  const location = await getCurrentLocation();
-  const user = await ensureTestUser();
-  const weather = await getCurrentWeather(location.id);
-  
+  // 3. 실제 DB에 outfit 저장
   const outfit = await prisma.outfit.create({
     data: {
-      userId: user.id,
+      userId: userId,
       locationId: location.id,
       date: new Date(date),
-      weatherTempAvg: weather.tempAvg,
+      weatherTempAvg: weather.tempAvg,        // 실제 날씨 온도
+      feelsLikeTemp: feelsLikeTemp,           // 사용자가 입력한 체감온도
       mainImage,
       memo
     }
   });
   
-  // 태그 연결
+  // 4. 태그 연결
   const allTagIds = [...moodTags, ...purposeTags];
   if (allTagIds.length > 0) {
     await prisma.outfitTag.createMany({
@@ -164,10 +178,10 @@ export async function createOutfit(outfitData) {
     });
   }
   
+  // 5. 생성된 outfit과 태그 정보 함께 반환
   return {
     ...outfit,
     moodTags,
     purposeTags
   };
-  */
 }
