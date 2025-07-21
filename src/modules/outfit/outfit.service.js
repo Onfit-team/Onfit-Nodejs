@@ -1,12 +1,49 @@
-// TODO: 나중에 실제 API로 교체
-async function getCurrentLocation() {
-  // 실제로는 위치 API 호출
-  // const location = await locationAPI.getCurrentLocation();
+import { PrismaClient } from '@prisma/client';
+import { findUserWithLocation } from '../location/location.repository.js';
+import { getCurrentWeatherByUserId } from '../weather/weather.service.js';
+import { UserLocationNotFoundError, WeatherApiError } from '../../utils/error.js';
+
+const prisma = new PrismaClient();
+
+// ✅ 실제 위치 API 호출로 수정
+async function getCurrentLocation(userId) {
+  const userWithLocation = await findUserWithLocation(userId);
+  
+  if (!userWithLocation || !userWithLocation.location) {
+    throw new UserLocationNotFoundError('사용자의 위치 정보가 설정되지 않았습니다.');
+  }
+
+  const location = userWithLocation.location;
   return {
-    id: 1,
-    name: "서울시 강남구",
-    code: "1168000000"
+    id: location.id,
+    name: `${location.sido} ${location.sigungu} ${location.dong}`,
+    sido: location.sido,
+    sigungu: location.sigungu,
+    dong: location.dong,
+    latitude: location.latitude,
+    longitude: location.longitude
   };
+}
+
+// ✅ 위치 정보 테스트 함수
+export async function testLocationConnection(userId) {
+  try {
+    const location = await getCurrentLocation(userId);
+    const weather = await getCurrentWeather(userId);
+    
+    return {
+      success: true,
+      location: location,
+      weather: weather,
+      message: '위치 및 날씨 정보 연동 성공'
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message,
+      message: '위치 또는 날씨 정보 연동 실패'
+    };
+  }
 }
 
 // TODO: 나중에 실제 API로 교체
@@ -20,6 +57,7 @@ async function getCurrentWeather(locationId) {
     status: "맑음"
   };
 }
+
 
 export function getFeelsLikeTempOptions() {
   return [
