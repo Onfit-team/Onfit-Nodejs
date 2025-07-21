@@ -53,6 +53,8 @@ model Location {
   users    User[]
   weather  Weather[]
   outfits  Outfit[]
+  latitude  Float?  
+  longitude Float? 
 }
 
 model Weather {
