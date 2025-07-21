@@ -15,5 +15,4 @@ router.get('/tags/options', getTagsController);
 // 인증 필요
 router.post('/outfits', authenticateJWT, createOutfitController);
 
-
 export default router;
