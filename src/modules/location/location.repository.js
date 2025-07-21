@@ -17,9 +17,9 @@ export const findLocationByRegion = async (sido, sigungu, dong) => {
   });
 };
 
-export const createLocation = async (sido, sigungu, dong, code) => {
+export const createLocation = async (sido, sigungu, dong, code, latitude, longitude) => {
   return await prisma.location.create({
-    data: { sido, sigungu, dong, code },
+    data: { sido, sigungu, dong, code, latitude, longitude },
   });
 };
 
@@ -61,7 +61,9 @@ export const setUserLocationByCode = async (userId, locationData) => {
       locationData.sido,
       locationData.sigungu,
       locationData.dong,
-      locationData.code || null // 저장은 null 가능
+      locationData.code || null, // 저장은 null 가능
+      locationData.latitude || null,   // 좌표 추가
+      locationData.longitude || null   // 좌표 추가
     );
   }
   // 4. 사용자 정보에 locationId 연결
