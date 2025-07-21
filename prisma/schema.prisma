@@ -79,6 +79,7 @@ model Outfit {
   locationId     Int
   date           DateTime
   weatherTempAvg Float?
+  feelsLikeTemp  Float?
   mainImage      String?
   memo           String?
   outfitItems    OutfitItem[]
