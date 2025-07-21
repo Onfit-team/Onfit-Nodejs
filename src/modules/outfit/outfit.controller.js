@@ -1,7 +1,8 @@
 import { 
   createOutfit, 
   getFeelsLikeTempOptions, 
-  getAllTags 
+  getAllTags,
+  testLocationConnection
 } from './outfit.service.js';
 import { OkSuccess, CreatedSuccess } from '../../utils/success.js';
 import { InvalidInputError } from '../../utils/error.js';
@@ -47,5 +48,21 @@ export const createOutfitController = async (req, res, next) => {
     res.status(201).json(new CreatedSuccess(outfit, "아웃핏 등록 성공"));
   } catch (err) {
     next(new InvalidInputError("아웃핏 등록 실패", err.message));
+  }
+};
+
+// ✅ 위치 연동 테스트 컨트롤러  
+export const testLocationController = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const result = await testLocationConnection(userId);
+    
+    if (result.success) {
+      res.status(200).json(new OkSuccess(result, "위치 정보 연동 테스트 성공"));
+    } else {
+      res.status(200).json(new OkSuccess(result, "위치 정보 연동 테스트 완료 (일부 오류 발생)"));
+    }
+  } catch (err) {
+    next(err);
   }
 };
