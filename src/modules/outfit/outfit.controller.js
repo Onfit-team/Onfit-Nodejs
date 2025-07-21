@@ -1,8 +1,7 @@
 import { 
   createOutfit, 
   getFeelsLikeTempOptions, 
-  getAllTags,
-  testLocationConnection
+  getAllTags
 } from './outfit.service.js';
 import { OkSuccess, CreatedSuccess } from '../../utils/success.js';
 import { InvalidInputError } from '../../utils/error.js';
@@ -29,7 +28,7 @@ export const createOutfitController = async (req, res, next) => {
   try {
     const { date, mainImage } = req.body;
     const { moodTags = [], purposeTags = [] } = req.body;
-    const userId = req.user.userId; // JWT에서 사용자 ID 추출
+    const userId = req.user.userId || req.user.id; // JWT에서 사용자 ID 추출
     
     
     // 필수 필드 검증
@@ -43,7 +42,7 @@ export const createOutfitController = async (req, res, next) => {
       throw new InvalidInputError("태그는 최대 3개까지만 선택할 수 있습니다.");
     }
     
-    const outfit = await createOutfit({ ...req.body, userId });
+    const outfit = await createOutfit({ ...req.body, userId: userId });
      
     res.status(201).json(new CreatedSuccess(outfit, "아웃핏 등록 성공"));
   } catch (err) {
@@ -51,17 +50,14 @@ export const createOutfitController = async (req, res, next) => {
   }
 };
 
-// ✅ 위치 연동 테스트 컨트롤러  
-export const testLocationController = async (req, res, next) => {
+//비슷한 온도 Outfit 조회 컨트롤러
+export const getSimilarOutfitsController = async (req, res, next) => {
   try {
     const userId = req.user.userId;
-    const result = await testLocationConnection(userId);
+    const tempRange = req.query.range ? parseInt(req.query.range) : 2;
     
-    if (result.success) {
-      res.status(200).json(new OkSuccess(result, "위치 정보 연동 테스트 성공"));
-    } else {
-      res.status(200).json(new OkSuccess(result, "위치 정보 연동 테스트 완료 (일부 오류 발생)"));
-    }
+    const result = await getSimilarTemperatureOutfits(userId, tempRange);
+    res.status(200).json(new OkSuccess(result, "비슷한 온도의 옷차림 기록 조회 성공"));
   } catch (err) {
     next(err);
   }
