@@ -142,11 +142,6 @@ export async function createOutfit(outfitData) {
     purposeTags = []
   } = outfitData;
   
-   console.log('🔍 추출된 userId:', userId);
-  
-  if (!userId) {
-    throw new Error('userId가 제공되지 않았습니다.');
-  }
 
   // 1. 위치 정보 가져오기
   const location = await getCurrentLocation(userId);
