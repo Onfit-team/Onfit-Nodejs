@@ -12,3 +12,13 @@ export const getCurrentWeather = async (req, res, next) => {
     next(err);
   }
 };
+
+export const getTomorrowWeather = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const result = await weatherService.getTomorrowWeatherByUserId(userId);
+    res.status(200).json(new OkSuccess(result, "내일 날씨 조회 성공"));
+  } catch (err) {
+    next(err);
+  }
+};

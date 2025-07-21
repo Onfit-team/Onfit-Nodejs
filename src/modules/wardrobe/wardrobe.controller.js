@@ -26,3 +26,19 @@ export const getWardrobeItemDetail = async (req, res, next) => {
     next(err);
   }
 };
+export const getWardrobeItemsByCategoryController = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const { category, subcategory } = req.query;
+
+    const items = await wardrobeService.getWardrobeItemsByCategory(
+      userId,
+      category ? Number(category) : undefined,
+      subcategory ? Number(subcategory) : undefined
+    );
+
+    return res.status(200).json(new OkSuccess(items));
+  } catch (err) {
+    next(err);
+  }
+};
