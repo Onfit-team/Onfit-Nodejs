@@ -180,3 +180,37 @@ export async function createOutfit(outfitData) {
     purposeTags
   };
 }
+
+export async function getUserRecent7DaysOutfits(userId) {
+  // 7일 전 시작일과 오늘 종료일 계산
+  const to   = new Date(); to.setHours(23,59,59,999);
+  const from = new Date(); from.setDate(from.getDate() - 6);
+                       from.setHours(0,0,0,0);
+
+  // DB에서 조회
+  const outfits = await prisma.outfit.findMany({
+    where: {
+      userId,
+      date: { gte: from, lte: to }
+    },
+    select: {
+      date: true,
+      mainImage: true
+    },
+    orderBy: { date: 'desc' }
+  });
+
+  // 사용자 정보
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { nickname: true }
+  });
+
+  return {
+    userName: user.nickname,
+    outfits: outfits.map(o => ({
+      date: o.date.toISOString().split('T')[0],  // YYYY-MM-DD
+      image: o.mainImage
+    }))
+  };
+}
