@@ -15,9 +15,9 @@ export const getFeelsLikeTempController = (req, res, next) => {
   }
 };
 
-export const getTagsController = (req, res, next) => {
+export const getTagsController = async(req, res, next) => {
   try {
-    const tags = getAllTags();
+    const tags = await getAllTags();
     res.status(200).json(new OkSuccess({ tags }, "태그 목록 조회 성공"));
   } catch (err) {
     next(new InvalidInputError("태그 목록 조회 실패", err.message));
