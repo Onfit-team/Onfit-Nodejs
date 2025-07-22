@@ -46,19 +46,9 @@ export const createOutfitController = async (req, res, next) => {
      
     res.status(201).json(new CreatedSuccess(outfit, "아웃핏 등록 성공"));
   } catch (err) {
+    if (err.message.includes('이미 해당 날짜에 등록된')) {
+      return next(new InvalidInputError(err.message));
+    }
     next(new InvalidInputError("아웃핏 등록 실패", err.message));
-  }
-};
-
-//비슷한 온도 Outfit 조회 컨트롤러
-export const getSimilarOutfitsController = async (req, res, next) => {
-  try {
-    const userId = req.user.userId;
-    const tempRange = req.query.range ? parseInt(req.query.range) : 2;
-    
-    const result = await getSimilarTemperatureOutfits(userId, tempRange);
-    res.status(200).json(new OkSuccess(result, "비슷한 온도의 옷차림 기록 조회 성공"));
-  } catch (err) {
-    next(err);
   }
 };
