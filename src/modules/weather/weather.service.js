@@ -30,7 +30,7 @@ const mapWeatherStatusWithPriority = (weatherArray) => {
       case 'Clouds':
         // ✅ 아이콘 코드로 구름 상태 세분화
         if (icon === '02d' || icon === '02n') {
-          return 'CloudFew';    // 구름 조금
+          return 'CloudBroken';    // 흐림
         } else if (icon === '03d' || icon === '03n') {
           return 'CloudMany';   // 구름 많음
         } else if (icon === '04d' || icon === '04n') {
