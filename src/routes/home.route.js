@@ -1,9 +1,6 @@
 import express from 'express';
-import { getCurrentDateController } from '../modules/home/home.controller.js';
-import { getCurrentWeather } from '../modules/weather/weather.controller.js';
-import { authenticateJWT } from '../middlewares/auth.middleware.js';
-import { getCurrentDateController, getSimilarWeatherOutfitsController } from '../modules/home/home.controller.js';
-import { getCurrentWeather, getTomorrowWeather} from '../modules/weather/weather.controller.js';
+import { getCurrentDateController, getSimilarWeatherOutfitsController, getRecentOutfitsController } from '../modules/home/home.controller.js';
+import { getCurrentWeather, getTomorrowWeather } from '../modules/weather/weather.controller.js';
 import { authenticateJWT } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
