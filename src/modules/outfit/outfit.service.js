@@ -142,6 +142,24 @@ export async function createOutfit(outfitData) {
     purposeTags = []
   } = outfitData;
   
+// 해당 날짜에 이미 등록된 outfit이 있는지 확인
+  const inputDate = new Date(date);
+  const startOfDay = new Date(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 0, 0, 0, 0);
+  const endOfDay = new Date(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 23, 59, 59, 999);
+
+  const existingOutfit = await prisma.outfit.findFirst({
+    where: {
+      userId,
+      date: {
+        gte: startOfDay,
+        lte: endOfDay
+      }
+    }
+  });
+
+  if (existingOutfit) {
+    throw new Error('이미 해당 날짜에 등록된 코디가 있습니다. 하루에 하나의 코디만 등록할 수 있습니다.');
+  }
 
   // 1. 위치 정보 가져오기
   const location = await getCurrentLocation(userId);
@@ -154,7 +172,7 @@ export async function createOutfit(outfitData) {
     data: {
       userId: userId,
       locationId: location.id,
-      date: new Date(date),
+      date: inputDate,
       weatherTempAvg: weather.tempAvg,        // 실제 날씨 온도
       feelsLikeTemp: feelsLikeTemp,           // 사용자가 입력한 체감온도
       mainImage,
