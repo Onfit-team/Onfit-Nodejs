@@ -1,20 +1,28 @@
 from ultralytics import YOLO
 import sys
+import json
+import io
+from PIL import Image
 
-if len(sys.argv) < 5:
-    print('Usage: python predict.py <image_path> <model_path> <project> <name>')
+if len(sys.argv) < 2:
+    sys.stderr.write('Usage: python predict.py <model_path>\n')
     exit(1)
 
-image_path, model_path, project, name = sys.argv[1:5]
-
+model_path = sys.argv[1]
 model = YOLO(model_path)
-results = model(
-    image_path,
-    save=True,           # 박스그려진 전체 이미지 저장 (반드시 추가!)
-    save_txt=True,
-    save_crop=True,
-    project=project,
-    name=name,
-    exist_ok=True
-)
 
+img_data = sys.stdin.buffer.read()
+img = Image.open(io.BytesIO(img_data)).convert('RGB')
+
+results = model.predict(img, save=False, verbose=False)
+
+data = []
+for box in results[0].boxes:
+    cls = results[0].names[int(box.cls)]
+    xyxy = box.xyxy.tolist()[0]
+    data.append({
+        'class': cls,
+        'bbox': xyxy
+    })
+
+sys.stdout.write(json.dumps(data, ensure_ascii=False))
