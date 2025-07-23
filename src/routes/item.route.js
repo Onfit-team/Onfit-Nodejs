@@ -6,26 +6,13 @@ import * as itemController from '../modules/item/item.controller.js';
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-// 이미지 분석 (YOLO)
-router.post(
-  '/crop',
-  authenticateJWT,
-  upload.single('photo'),               // photo 필드로 이미지 업로드
-  itemController.cropAndSave
-);
+// ✅ 1단계: 사진 업로드 + 크롭
+router.post('/detect', authenticateJWT, upload.single('photo'), itemController.detectItems);
 
-// 선택된 크롭 스타일 변환
-router.post(
-  '/transform',
-  authenticateJWT,
-  itemController.transformSelectedCrop
-);
+// ✅ 2단계: DALL·E 리파인
+router.post('/refine', authenticateJWT, itemController.refineItem);
 
-// 아이템 삭제
-router.delete(
-  '/:item_id',
-  authenticateJWT,
-  itemController.removeItem
-);
+// ✅ 3단계: 최종 저장
+router.post('/save', authenticateJWT, itemController.saveItem);
 
 export default router;
