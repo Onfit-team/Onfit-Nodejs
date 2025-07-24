@@ -1,3 +1,5 @@
+//src/routes/community.route.js
+
 import express from 'express';
 import {
     toggleOutfitLikeController,
