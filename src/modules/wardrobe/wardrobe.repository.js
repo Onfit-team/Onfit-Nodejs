@@ -22,3 +22,29 @@ export const findItemById = async (userId, itemId) => {
     },
   });
 };
+
+// export const wardrobeRepository = {
+//   createItem: (data) =>
+//     prisma.item.create({
+//       data,
+//     }),
+// };
+
+export const wardrobeRepository = {
+  createItem: async (data) => {
+    const requiredFields = ['userId', 'category', 'subcategory', 'color', 'season'];
+
+    console.log('📦 Item 저장 시도:', data);
+
+    const missing = requiredFields.filter((key) => data[key] === undefined || data[key] === null);
+
+    if (missing.length > 0) {
+      console.error('❌ 누락된 필수 필드:', missing);
+      throw new Error(`다음 필드가 누락됨: ${missing.join(', ')}`);
+    }
+
+    return await prisma.item.create({
+      data,
+    });
+  },
+};
