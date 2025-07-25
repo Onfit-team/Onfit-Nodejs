@@ -30,7 +30,7 @@ const mapWeatherStatusWithPriority = (weatherArray) => {
       case 'Clouds':
         // ✅ 아이콘 코드로 구름 상태 세분화
         if (icon === '02d' || icon === '02n') {
-          return 'CloudFew';    // 구름 조금
+          return 'CloudBroken';    // 흐림
         } else if (icon === '03d' || icon === '03n') {
           return 'CloudMany';   // 구름 많음
         } else if (icon === '04d' || icon === '04n') {
@@ -120,10 +120,32 @@ const fetchWeatherData = async (latitude, longitude, isToday) => {
 // 오늘 날씨 응답 구성
 const buildCurrentWeatherResponse = (current, forecastList) => {
   const today = new Date().toDateString();
+  
+  // 1. 오늘 하루의 모든 예보 데이터 필터링
   const todayForecasts = forecastList.filter(item => 
     new Date(item.dt * 1000).toDateString() === today
   );
 
+  // 2. 오전 6시부터 밤 11시(23시)까지 필터링
+  const daytimeForecasts = todayForecasts.filter(item => {
+    const hour = new Date(item.dt * 1000).getHours();
+    return hour >= 6 && hour <= 23; // 6시~23시
+  });
+
+  // 3. 실제 하루 평균 온도 계산 (6시~23시)
+  let realTempAvg;
+  
+  if (daytimeForecasts.length > 0) {
+    // 예보 데이터가 있으면 해당 시간대 평균 계산
+    realTempAvg = daytimeForecasts.reduce((sum, forecast) => 
+      sum + forecast.main.temp, 0
+    ) / daytimeForecasts.length;
+  } else {
+    // 예보 데이터가 없으면 현재 온도 사용
+    realTempAvg = current.main.temp;
+  }
+
+  // 4. 최저/최고 온도 (기존 로직 유지)
   const todayMinTemp = todayForecasts.length > 0 
     ? Math.min(...todayForecasts.map(f => f.main.temp_min))
     : current.main.temp_min;
@@ -137,7 +159,7 @@ const buildCurrentWeatherResponse = (current, forecastList) => {
     : 0;
 
   return {
-    tempAvg: Math.round(current.main.temp),
+    tempAvg: Math.round(realTempAvg * 10) / 10, // 6시~23시 평균 온도
     tempMin: Math.round(todayMinTemp * 10) / 10,
     tempMax: Math.round(todayMaxTemp * 10) / 10,
     feelsLike: Math.round(current.main.feels_like * 10) / 10,
@@ -160,10 +182,17 @@ const buildTomorrowWeatherResponse = (forecastList) => {
     throw new WeatherApiError('내일 날씨 정보를 찾을 수 없습니다.');
   }
 
+  const daytimeForecasts = tomorrowForecasts.filter(item => {
+    const hour = new Date(item.dt * 1000).getHours();
+    return hour >= 6 && hour <= 23; // 6시~23시
+  });
+
   const tempMin = Math.min(...tomorrowForecasts.map(f => f.main.temp_min));
   const tempMax = Math.max(...tomorrowForecasts.map(f => f.main.temp_max));
-  const tempAvg = tomorrowForecasts.reduce((sum, f) => sum + f.main.temp, 0) / tomorrowForecasts.length;
-  
+   const tempAvg = daytimeForecasts.length > 0
+    ? daytimeForecasts.reduce((sum, f) => sum + f.main.temp, 0) / daytimeForecasts.length
+    : tomorrowForecasts.reduce((sum, f) => sum + f.main.temp, 0) / tomorrowForecasts.length;
+     
   // 낮 시간대 대표 데이터
   const noonForecast = tomorrowForecasts.find(f => {
     const hour = new Date(f.dt * 1000).getHours();
