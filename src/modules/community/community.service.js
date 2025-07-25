@@ -1,5 +1,3 @@
-//src/modules/community/community.service.js
-
 import { PrismaClient } from '@prisma/client';
 import { CustomError } from '../../utils/error.js';
 const prisma = new PrismaClient();
