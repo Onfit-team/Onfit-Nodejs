@@ -1,29 +1,47 @@
-import * as itemService from './item.service.js';
-import { CreatedSuccess, OkSuccess } from '../../utils/success.js';
-import { CustomError, UnauthorizedError } from '../../utils/error.js';
+import * as itemService from "./item.service.js";
+import { CreatedSuccess, OkSuccess } from "../../utils/success.js";
+import { CustomError, InvalidInputError } from "../../utils/error.js";
 
-export const cropAndSave = async (req, res, next) => {
+export const detectItems = async (req, res, next) => {
   try {
-    const userId = req.user?.id || req.user?.userId;
-    if (!userId) throw new CustomError("로그인 필요", "UNAUTHORIZED", 401);
+    const userId = req.user?.userId;
+    if (!userId) throw new CustomError("로그인이 필요합니다", "UNAUTHORIZED", 401);
 
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
-    const result = await itemService.cropAndSave(userId, req.file, baseUrl);
+    const file = req.file;
+    if (!file?.buffer) throw new InvalidInputError("이미지 파일이 필요합니다.");
 
-    res.status(201).json(new CreatedSuccess(result, "Cropping Complete"));
+    const crops = await itemService.detectAndCache(userId, file);
+    res.status(200).json(new OkSuccess({ crops }, "아이템 감지 완료"));
   } catch (err) {
     next(err);
   }
 };
 
-export const removeItem = async (req, res, next) => {
+export const refineItem = async (req, res, next) => {
   try {
-    console.log('req.user:', req.user); // user 객체 로그로 디버깅
-    const userId = req.user?.id || req.user?.userId;
-    if (!userId) throw new UnauthorizedError("로그인 필요");
-    const { item_id } = req.params;
-    const result = await itemService.removeItem(item_id, userId);
-    res.status(200).json(new OkSuccess(result, "CROP_DELETED"));
+    const userId = req.user?.userId;
+    if (!userId) throw new CustomError("로그인이 필요합니다", "UNAUTHORIZED", 401);
+
+    const { cropId } = req.body;
+    if (!cropId) throw new InvalidInputError("cropId가 필요합니다.");
+
+    const result = await itemService.refineItem(userId, cropId);
+    res.status(200).json(new OkSuccess(result, "아이템 리파인 완료"));
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const saveItem = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) throw new CustomError("로그인이 필요합니다", "UNAUTHORIZED", 401);
+
+    const { refinedId } = req.body;
+    if (!refinedId) throw new InvalidInputError("refinedId가 필요합니다.");
+
+    const result = await itemService.saveItem(userId, refinedId);
+    res.status(200).json(new OkSuccess(result, "아이템 저장 완료"));
   } catch (err) {
     next(err);
   }
