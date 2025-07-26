@@ -1,22 +1,13 @@
-import express from 'express';
-import multer from 'multer';
-import { authenticateJWT } from '../middlewares/auth.middleware.js';
-import * as itemController from '../modules/item/item.controller.js';
+import express from "express";
+import multer from "multer";
+import { authenticateJWT } from "../middlewares/auth.middleware.js";
+import * as itemController from "../modules/item/item.controller.js";
 
 const router = express.Router();
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ storage: multer.memoryStorage() });
 
-router.post(
-  '/crop',
-  authenticateJWT,
-  upload.single('photo'),
-  itemController.cropAndSave
-);
-
-router.delete(
-  '/:item_id',
-  authenticateJWT,
-  itemController.removeItem
-);
+router.post("/detect", authenticateJWT, upload.single("photo"), itemController.detectItems);
+router.post("/refine", authenticateJWT, itemController.refineItem);
+router.post("/save", authenticateJWT, itemController.saveItem);
 
 export default router;

@@ -96,37 +96,33 @@ export function getFeelsLikeTempOptions() {
   ];
 }
 
-export function getMoodTags() {
-  return [
-    { id: 1, name: "캐주얼" },
-    { id: 2, name: "스트릿" },
-    { id: 3, name: "미니멀" },
-    { id: 4, name: "클래식" },
-    { id: 5, name: "빈티지" },
-    { id: 6, name: "러블리" },
-    { id: 7, name: "페미닌" },
-    { id: 8, name: "보이시" },
-    { id: 9, name: "모던" }
-  ];
+export async function getMoodTags() {
+  const moodTags = await prisma.tag.findMany({
+    where: { type: 'mood' },
+    orderBy: { id: 'asc' },
+    select: { id: true, name: true }
+  });
+  return moodTags;
 }
 
-export function getPurposeTags() {
-  return [
-    { id: 10, name: "데일리" },
-    { id: 11, name: "출근룩" },
-    { id: 12, name: "데이트룩" },
-    { id: 13, name: "나들이룩" },
-    { id: 14, name: "여행룩" },
-    { id: 15, name: "운동복" },
-    { id: 16, name: "하객룩" },
-    { id: 17, name: "파티룩" }
-  ];
+export async function getPurposeTags() {
+  const purposeTags = await prisma.tag.findMany({
+    where: { type: 'purpose' },
+    orderBy: { id: 'asc' },
+    select: { id: true, name: true }
+  });
+  return purposeTags;
 }
 
-export function getAllTags() {
+export async function getAllTags() {
+  const [moodTags, purposeTags] = await Promise.all([
+    getMoodTags(),
+    getPurposeTags()
+  ]);
+
   return {
-    mood: getMoodTags(),
-    purpose: getPurposeTags()
+    mood: moodTags,
+    purpose: purposeTags
   };
 }
 
@@ -142,6 +138,24 @@ export async function createOutfit(outfitData) {
     purposeTags = []
   } = outfitData;
   
+// 해당 날짜에 이미 등록된 outfit이 있는지 확인
+  const inputDate = new Date(date);
+  const startOfDay = new Date(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 0, 0, 0, 0);
+  const endOfDay = new Date(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 23, 59, 59, 999);
+
+  const existingOutfit = await prisma.outfit.findFirst({
+    where: {
+      userId,
+      date: {
+        gte: startOfDay,
+        lte: endOfDay
+      }
+    }
+  });
+
+  if (existingOutfit) {
+    throw new Error('이미 해당 날짜에 등록된 코디가 있습니다. 하루에 하나의 코디만 등록할 수 있습니다.');
+  }
 
   // 1. 위치 정보 가져오기
   const location = await getCurrentLocation(userId);
@@ -154,7 +168,7 @@ export async function createOutfit(outfitData) {
     data: {
       userId: userId,
       locationId: location.id,
-      date: new Date(date),
+      date: inputDate,
       weatherTempAvg: weather.tempAvg,        // 실제 날씨 온도
       feelsLikeTemp: feelsLikeTemp,           // 사용자가 입력한 체감온도
       mainImage,
@@ -178,5 +192,39 @@ export async function createOutfit(outfitData) {
     ...outfit,
     moodTags,
     purposeTags
+  };
+}
+
+export async function getUserRecent7DaysOutfits(userId) {
+  // 7일 전 시작일과 오늘 종료일 계산
+  const to   = new Date(); to.setHours(23,59,59,999);
+  const from = new Date(); from.setDate(from.getDate() - 6);
+                       from.setHours(0,0,0,0);
+
+  // DB에서 조회
+  const outfits = await prisma.outfit.findMany({
+    where: {
+      userId,
+      date: { gte: from, lte: to }
+    },
+    select: {
+      date: true,
+      mainImage: true
+    },
+    orderBy: { date: 'desc' }
+  });
+
+  // 사용자 정보
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { nickname: true }
+  });
+
+  return {
+    userName: user.nickname,
+    outfits: outfits.map(o => ({
+      date: o.date.toISOString().split('T')[0],  // YYYY-MM-DD
+      image: o.mainImage
+    }))
   };
 }
