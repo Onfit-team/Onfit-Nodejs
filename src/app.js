@@ -35,7 +35,9 @@ app.get('/', (req, res) => {
   res.send('서버 정상 작동 중!');
 });
 
-app.listen(3000, '0.0.0.0', () => {
-  console.log('Server on http://0.0.0.0:3000');
-});
+const host = process.env.HOST || '0.0.0.0';
+const port = process.env.PORT || 3000;
 
+app.listen(port, host, () => {
+  console.log(`Server running on http://${host}:${port}`);
+});

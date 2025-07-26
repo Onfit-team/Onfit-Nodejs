@@ -1,0 +1,31 @@
+name: Auto Deploy to EC2
+
+on:
+  push:
+    branches: [ main ]  # main 브랜치에 push 시 자동 배포
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Deploy to EC2
+      env:
+        PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+        HOST: ${{ secrets.EC2_HOST }}
+        USER: ${{ secrets.EC2_USER }}
+      run: |
+        echo "$PRIVATE_KEY" > private_key.pem
+        chmod 600 private_key.pem
+        
+        ssh -o StrictHostKeyChecking=no -i private_key.pem ${USER}@${HOST} '
+          cd ~/Onfit-Nodejs
+          git pull origin main
+          npm install
+          npx prisma generate
+          pm2 restart onfit-backend
+          echo "🚀 배포 완료!"
+        '
