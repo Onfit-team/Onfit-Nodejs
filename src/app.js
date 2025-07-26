@@ -31,12 +31,13 @@ app.use('/community', communityRouter);
 
 app.use(errorHandler);
 
+app.get('/', (req, res) => {
+  res.send('서버 정상 작동 중!');
+});
+
 const host = process.env.HOST || '0.0.0.0';
 const port = process.env.PORT || 3000;
 
 app.listen(port, host, () => {
   console.log(`Server running on http://${host}:${port}`);
-
-//app.listen(3000, () => {
-//  console.log('Server running on http://localhost:3000');
 });
