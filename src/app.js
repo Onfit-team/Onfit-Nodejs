@@ -31,6 +31,11 @@ app.use('/community', communityRouter);
 
 app.use(errorHandler);
 
+app.get('/', (req, res) => {
+  res.send('서버 정상 작동 중!');
+});
+
 app.listen(3000, '0.0.0.0', () => {
   console.log('Server on http://0.0.0.0:3000');
 });
+
