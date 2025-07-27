@@ -72,6 +72,23 @@ export const getWardrobeItemsByCategory = async (userId, category, subcategory, 
   });
 };
 
+export const getOutfitsByItem = async (userId, itemId) => {
+  return await prisma.outfit.findMany({
+    where: {
+      userId,
+      outfitItems: {
+        some: { itemId: Number(itemId) }
+      }
+    },
+    orderBy: { id: 'desc' },
+    include: {
+      outfitItems: {
+        include: { item: true }
+      },
+      outfitTags: {
+        include: { tag: true }
+      }
+    }
 export const getWardrobeItemsByFilter = async (userId, filterDto) => {
   const { season, color, brand, tagIds } = filterDto;
   const where = {

@@ -5,9 +5,11 @@ import {
   getWardrobeItemDetail,
   getWardrobeItemsByCategoryController,
   uploadWardrobeImage,
-  deleteWardrobeItemController,
+  getOutfitsByItemController,
+  deleteWardrobeItemController
   getWardrobeItemsByFilterController
 } from '../modules/wardrobe/wardrobe.controller.js';
+
 import { authenticateJWT } from '../middlewares/auth.middleware.js';
 import multer from 'multer';
 
@@ -19,6 +21,7 @@ router.get('/items', authenticateJWT, getWardrobeItemsController);
 router.get('/items/categories', authenticateJWT, getWardrobeItemsByCategoryController);
 router.get('/items/filter', authenticateJWT, getWardrobeItemsByFilterController);
 router.get('/items/:itemId', authenticateJWT, getWardrobeItemDetail);
+router.get('/items/:itemId/outfits', authenticateJWT, getOutfitsByItemController);
 router.post('/items', authenticateJWT, upload.single('image'), uploadWardrobeImage);
 router.delete('/items/:itemId', authenticateJWT, deleteWardrobeItemController);
 
