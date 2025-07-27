@@ -149,4 +149,17 @@ export const analyzeAndSaveItem = async (imagePath, userId) => {
   return result;
 };
 
+export const softDeleteItem = async (userId, itemId) => {
+  const item = await prisma.item.findUnique({
+    where: { id: itemId },
+  });
 
+  if (!item || item.isDeleted || item.userId !== userId) {
+    throw new CustomError(errorCode.NOT_FOUND, '삭제할 아이템이 없거나 권한이 없습니다.');
+  }
+
+  await prisma.item.update({
+    where: { id: itemId },
+    data: { isDeleted: true },
+  });
+};
