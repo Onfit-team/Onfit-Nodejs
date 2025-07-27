@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 const result = dotenv.config();
+console.log("[dotenv 결과]", result);
 
 import express from 'express';
 import passport from './modules/user/kakao.strategy.js';
@@ -41,3 +42,6 @@ const port = process.env.PORT || 3000;
 app.listen(port, host, () => {
   console.log(`Server running on http://${host}:${port}`);
 });
+
+console.log("✅ KAKAO_CLIENT_ID:", process.env.KAKAO_CLIENT_ID);
+console.log("✅ KAKAO_CALLBACK_URL:", process.env.KAKAO_CALLBACK_URL);
