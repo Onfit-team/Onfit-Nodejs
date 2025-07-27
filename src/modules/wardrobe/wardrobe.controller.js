@@ -58,3 +58,14 @@ export const uploadWardrobeImage = async (req, res, next) => {
     next(err);
   }
 };
+
+export const getOutfitsByItemController = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const { itemId } = req.params;
+    const outfits = await wardrobeService.getOutfitsByItem(userId, itemId);
+    return res.status(200).json(new OkSuccess(outfits));
+  } catch (err) {
+    next(err);
+  }
+};
