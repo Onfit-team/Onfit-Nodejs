@@ -2,6 +2,7 @@
 import * as wardrobeService from './wardrobe.service.js';
 import { analyzeAndSaveItem } from './wardrobe.service.js';
 import { OkSuccess } from '../../utils/success.js';
+import { WardrobeFilterDto } from './wardrobe.dto.js';
 
 export const getWardrobeItemsController = async (req, res, next) => {
   try {
@@ -38,6 +39,20 @@ export const getWardrobeItemsByCategoryController = async (req, res, next) => {
       subcategory ? Number(subcategory) : undefined
     );
 
+    return res.status(200).json(new OkSuccess(items));
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getWardrobeItemsByFilterController = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const filterDto = new WardrobeFilterDto(req.query);
+    const items = await wardrobeService.getWardrobeItemsByFilter(userId, filterDto);
+    if (!items || items.length === 0) {
+      return res.status(200).json(new OkSuccess([], '해당하는 아이템이 없습니다'));
+    }
     return res.status(200).json(new OkSuccess(items));
   } catch (err) {
     next(err);
