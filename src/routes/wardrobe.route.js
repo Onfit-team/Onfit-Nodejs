@@ -6,7 +6,7 @@ import {
   getWardrobeItemsByCategoryController,
   uploadWardrobeImage,
   getOutfitsByItemController,
-  deleteWardrobeItemController
+  deleteWardrobeItemController,
   getWardrobeItemsByFilterController
 } from '../modules/wardrobe/wardrobe.controller.js';
 

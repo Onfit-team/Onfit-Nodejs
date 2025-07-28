@@ -83,6 +83,8 @@ export const getOutfitsByItemController = async (req, res, next) => {
     return res.status(200).json(new OkSuccess(outfits));
   } catch (err) {
     next(err);
+  }
+};
 
 export const deleteWardrobeItemController = async (req, res, next) => {
   try {

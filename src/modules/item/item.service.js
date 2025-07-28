@@ -15,7 +15,7 @@ import FormData from "form-data";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// ✅ YOLO로 객체 감지 및 크롭 저장 (bbox padding 제거)
+// YOLO로 객체 감지 및 크롭 저장 (bbox padding 제거)
 export const detectAndCache = async (userId, file) => {
   if (!file || !file.buffer) throw new InvalidInputError("이미지 파일이 필요합니다.");
 
@@ -51,48 +51,26 @@ export const detectAndCache = async (userId, file) => {
   return crops;
 };
 
-// ✅ refineItem: 배경 제거 → DALL·E 리터칭
+// refineItem: 배경 제거 → DALL·E 리터칭
 export const refineItem = async (userId, cropId) => {
   const base64 = await redisClient.get(`crop:${userId}:${cropId}`);
   if (!base64) throw new NotExistsError("크롭 이미지가 만료되었습니다.");
+
   const inputBuffer = Buffer.from(base64, "base64");
 
-  const tempDir = os.tmpdir();
-  const inputPath = path.join(tempDir, `input-${uuidv4()}.png`);
-  const bgRemovedPath = path.join(tempDir, `removed-${uuidv4()}.png`);
-
-  await sharp(inputBuffer)
+  const image = await sharp(inputBuffer)
     .resize(768, 768, { fit: "contain", background: "#ffffff" })
     .flatten({ background: "#ffffff" })
-    .png()
-    .toFile(inputPath);
-
-  await runPython(path.join(__dirname, "remove_bg.py"), [inputPath, bgRemovedPath]);
-  const bgRemovedBuffer = fs.readFileSync(bgRemovedPath);
-
-  const image = await sharp(bgRemovedBuffer)
-    .resize(1024, 1024, { fit: "contain", background: "#f0f0f0" })
-    .flatten({ background: "#f0f0f0" })
-    .png()
-    .toBuffer();
-
-  const mask = await sharp(bgRemovedBuffer)
-    .resize(1024, 1024, { fit: "contain", background: "#00000000" })
-    .threshold(1)
-    .removeAlpha()
-    .ensureAlpha()
     .png()
     .toBuffer();
 
   const form = new FormData();
-  form.append("image", image, { filename: "image.png" });
-  form.append("mask", mask, { filename: "mask.png" });
-  form.append("prompt", "Keep only the clothing item on a clean white or gray background. Retouch it cleanly, preserve color and texture.");
+  form.append("image", image, { filename: "original.png" });
   form.append("n", 1);
   form.append("size", "1024x1024");
   form.append("response_format", "b64_json");
 
-  const openaiRes = await axios.post("https://api.openai.com/v1/images/edits", form, {
+  const res = await axios.post("https://api.openai.com/v1/images/variations", form, {
     headers: {
       Authorization: `Bearer ${process.env.OPENAI_API_KEY1}`,
       ...form.getHeaders()
@@ -101,7 +79,8 @@ export const refineItem = async (userId, cropId) => {
   });
 
   const refinedId = uuidv4();
-  const refinedBuffer = Buffer.from(openaiRes.data.data[0].b64_json, "base64");
+  const refinedBuffer = Buffer.from(res.data.data[0].b64_json, "base64");
+
   await redisClient.setEx(`refined:${userId}:${refinedId}`, 86400, refinedBuffer.toString("base64"));
 
   return { refined_id: refinedId };

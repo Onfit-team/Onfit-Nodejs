@@ -1,24 +1,21 @@
-import { spawn } from 'child_process';
-import { CustomError } from '../../utils/error.js';
+import fs from 'fs/promises';
+import path from 'path';
 
-export const trainYoloModel = async (datasetId, mode) => {
+export const uploadYoloModel = async (file) => {
+  const modelDir = path.resolve('src/modules/item/yolo_models');
+  const savePath = path.join(modelDir, 'best.pt');
+
+  // 경로가 없으면 생성
+  await fs.mkdir(modelDir, { recursive: true });
+
+  // 기존 파일 백업하고 저장 (선택)
+  const backupPath = path.join(modelDir, `backup_best_${Date.now()}.pt`);
   try {
-    const now = new Date();
-    const jobId = `train_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
-    const pythonPath = process.env.PYTHON_PATH || 'python';
-    const proc = spawn(
-      pythonPath,
-      ['train.py', '--dataset', datasetId, '--mode', mode]
-    );
-    proc.on('error', (err) => {
-      throw new CustomError("모델 학습 중 오류가 발생했습니다.", "M500", 500);
-    });
-
-    return {
-      jobId,
-      status: "RUNNING"
-    };
-  } catch (err) {
-    throw new CustomError("모델 학습 중 오류가 발생했습니다.", "M500", 500);
+    await fs.copyFile(savePath, backupPath);
+  } catch (_) {
+    // 처음 업로드일 경우 무시
   }
+
+  // 덮어쓰기
+  await fs.writeFile(savePath, file.buffer);
 };

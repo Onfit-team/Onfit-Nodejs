@@ -89,6 +89,9 @@ export const getOutfitsByItem = async (userId, itemId) => {
         include: { tag: true }
       }
     }
+  });
+};
+
 export const getWardrobeItemsByFilter = async (userId, filterDto) => {
   const { season, color, brand, tagIds } = filterDto;
   const where = {
