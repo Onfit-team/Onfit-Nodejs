@@ -72,6 +72,54 @@ export const getWardrobeItemsByCategory = async (userId, category, subcategory, 
   });
 };
 
+export const getOutfitsByItem = async (userId, itemId) => {
+  return await prisma.outfit.findMany({
+    where: {
+      userId,
+      outfitItems: {
+        some: { itemId: Number(itemId) }
+      }
+    },
+    orderBy: { id: 'desc' },
+    include: {
+      outfitItems: {
+        include: { item: true }
+      },
+      outfitTags: {
+        include: { tag: true }
+      }
+    }
+export const getWardrobeItemsByFilter = async (userId, filterDto) => {
+  const { season, color, brand, tagIds } = filterDto;
+  const where = {
+    userId,
+    isDeleted: false,
+    ...(season !== undefined && { season }),
+    ...(color !== undefined && { color }),
+    ...(brand !== undefined && { brand }),
+  };
+
+  // 태그 필터: tagIds 중 하나라도 포함된 아이템
+  if (tagIds && tagIds.length > 0) {
+    return await prisma.item.findMany({
+      where: {
+        ...where,
+        itemTags: {
+          some: {
+            tagId: { in: tagIds },
+          },
+        },
+      },
+      orderBy: { id: 'desc' },
+    });
+  }
+
+  // 태그 필터 없으면 일반 조건만
+  return await prisma.item.findMany({
+    where,
+    orderBy: { id: 'desc' },
+  });
+};
 
 
 export const analyzeAndSaveItem = async (imagePath, userId) => {
