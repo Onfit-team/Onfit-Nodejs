@@ -20,9 +20,13 @@ export const getWardrobeItemDetail = async (req, res, next) => {
   try {
     const { itemId } = req.params;
     const userId = req.user.userId;
+    const parsedItemId = parseInt(itemId, 10);
 
-    const item = await wardrobeService.getWardrobeItemDetail(userId, parseInt(itemId));
+    if (!itemId || isNaN(parsedItemId)) {
+      return res.status(400).json({ isSuccess: false, message: 'itemId가 올바르지 않습니다.' });
+    }
 
+    const item = await wardrobeService.getWardrobeItemDetail(userId, parsedItemId);
     return res.status(200).json(new OkSuccess(item));
   } catch (err) {
     next(err);
@@ -95,5 +99,15 @@ export const deleteWardrobeItemController = async (req, res, next) => {
   } catch (error) {
     next(error);
 
+  }
+};
+
+export const getWardrobeBrandsByUserController = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const brands = await wardrobeService.getWardrobeBrandsByUser(userId);
+    return res.status(200).json(new OkSuccess(brands));
+  } catch (err) {
+    next(err);
   }
 };
