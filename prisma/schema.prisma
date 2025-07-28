@@ -86,6 +86,7 @@ model Outfit {
   outfitItems    OutfitItem[]
   outfitTags     OutfitTag[]
   outfitLikes    OutfitLike[]
+  isPublished    Boolean  @default(false)
 }
 
 model Tag {
