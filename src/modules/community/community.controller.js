@@ -14,3 +14,23 @@ export const toggleOutfitLikeController = async (req, res, next) => {
     next(err);
   }
 };
+
+export const getPublishedOutfitsByOutfitTagsController = async (req, res, next) => {
+  try {
+    const { outfit_tag_ids } = req.query;
+    if (!outfit_tag_ids) {
+      return res.status(400).json({ isSuccess: false, message: 'outfit_tag_ids 파라미터가 필요합니다.' });
+    }
+    const outfitTagIds = outfit_tag_ids.split(',').map(id => Number(id.trim())).filter(Boolean);
+    if (outfitTagIds.length === 0) {
+      return res.status(400).json({ isSuccess: false, message: '유효한 outfit_tag_ids가 필요합니다.' });
+    }
+    const outfits = await communityService.getPublishedOutfitsByOutfitTags(outfitTagIds);
+    if (!outfits || outfits.length === 0) {
+      return res.status(200).json({ isSuccess: true, result: [], message: '해당하는 아웃핏이 없습니다.' });
+    }
+    return res.status(200).json({ isSuccess: true, result: outfits });
+  } catch (err) {
+    next(err);
+  }
+};
