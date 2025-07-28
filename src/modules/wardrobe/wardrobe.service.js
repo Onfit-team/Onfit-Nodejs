@@ -144,3 +144,17 @@ export const softDeleteItem = async (userId, itemId) => {
     data: { isDeleted: true },
   });
 };
+
+export const getWardrobeBrandsByUser = async (userId) => {
+  const brands = await prisma.item.findMany({
+    where: {
+      userId,
+      isDeleted: false,
+      brand: { not: null },
+    },
+    select: { brand: true },
+    orderBy: { id: 'desc' },
+    distinct: ['brand'],
+  });
+  return brands.map(b => b.brand);
+};
