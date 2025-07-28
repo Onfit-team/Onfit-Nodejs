@@ -2,6 +2,7 @@
 import * as wardrobeService from './wardrobe.service.js';
 import { analyzeAndSaveItem } from './wardrobe.service.js';
 import { OkSuccess } from '../../utils/success.js';
+import { WardrobeFilterDto } from './wardrobe.dto.js';
 
 export const getWardrobeItemsController = async (req, res, next) => {
   try {
@@ -48,6 +49,20 @@ export const getWardrobeItemsByCategoryController = async (req, res, next) => {
   }
 };
 
+export const getWardrobeItemsByFilterController = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const filterDto = new WardrobeFilterDto(req.query);
+    const items = await wardrobeService.getWardrobeItemsByFilter(userId, filterDto);
+    if (!items || items.length === 0) {
+      return res.status(200).json(new OkSuccess([], '해당하는 아이템이 없습니다'));
+    }
+    return res.status(200).json(new OkSuccess(items));
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const uploadWardrobeImage = async (req, res, next) => {
   try {
     const { file, user } = req;
@@ -63,6 +78,16 @@ export const uploadWardrobeImage = async (req, res, next) => {
   }
 };
 
+
+export const getOutfitsByItemController = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const { itemId } = req.params;
+    const outfits = await wardrobeService.getOutfitsByItem(userId, itemId);
+    return res.status(200).json(new OkSuccess(outfits));
+  } catch (err) {
+    next(err);
+
 export const deleteWardrobeItemController = async (req, res, next) => {
   try {
     const userId = req.user.userId;
@@ -73,6 +98,7 @@ export const deleteWardrobeItemController = async (req, res, next) => {
     res.status(200).json(new OkSuccess('아이템이 삭제되었습니다.'));
   } catch (error) {
     next(error);
+
   }
 };
 
