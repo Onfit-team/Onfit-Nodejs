@@ -40,6 +40,8 @@ model Item {
   season       Int
   purchaseDate DateTime?
   image        String?
+  price        Int?       // 가격 (nullable)
+  purchaseSite String?    // 구매 사이트 (nullable)
   isDeleted    Boolean    @default(false)
   itemTags     ItemTag[]
   outfitItems  OutfitItem[]
