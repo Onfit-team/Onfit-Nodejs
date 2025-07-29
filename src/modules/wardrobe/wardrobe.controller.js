@@ -1,6 +1,7 @@
 // src/modules/wardrobe/wardrobe.controller.js
 import * as wardrobeService from './wardrobe.service.js';
-import { OkSuccess } from '../../utils/success.js';
+import { OkSuccess, CreatedSuccess } from '../../utils/success.js';
+import { TooManyTagsError } from '../../utils/error.js';
 import { WardrobeFilterDto } from './wardrobe.dto.js';
 
 export const createItem = async (req, res, next) => {
@@ -8,22 +9,18 @@ export const createItem = async (req, res, next) => {
     const userId = req.user.userId; // JWT 인증 미들웨어로부터
     const itemData = req.body;
 
-    if (itemData.tagIds?.length > 3) {
-      return res.status(400).json({
-        isSuccess: false,
-        code: 'INVALID_TAG',
-        message: '태그는 최대 3개까지만 선택 가능합니다.',
-      });
+    const tagIds = itemData.tagIds || [];
+
+    // 태그 분류 (1~9: mood, 10~17: purpose)
+    const moodTags = tagIds.filter(id => id >= 1 && id <= 9);
+    const purposeTags = tagIds.filter(id => id >= 10 && id <= 17);
+
+    if (moodTags.length > 3 || purposeTags.length > 3) {
+      throw new TooManyTagsError();
     }
 
     const itemId = await wardrobeService.createItem(userId, itemData);
-
-    res.status(201).json({
-      isSuccess: true,
-      code: 'ITEM_CREATED',
-      message: '아이템이 성공적으로 등록되었습니다.',
-      result: { itemId },
-    });
+    return res.status(201).json(new CreatedSuccess({ itemId }, "아이템이 성공적으로 등록되었습니다."));
   } catch (err) {
     next(err);
   }
@@ -35,21 +32,18 @@ export const updateItem = async (req, res, next) => {
     const userId = req.user.userId;
     const itemData = req.body;
 
-    // tagIds 최대 3개 확인
-    if (itemData.tagIds && itemData.tagIds.length > 3) {
-      return res.status(400).json({
-        isSuccess: false,
-        code: 'INVALID_TAG',
-        message: '태그는 최대 3개까지만 선택 가능합니다.'
-      });
+    const tagIds = itemData.tagIds || [];
+
+    // 태그 분류
+    const moodTags = tagIds.filter(id => id >= 1 && id <= 9);
+    const purposeTags = tagIds.filter(id => id >= 10 && id <= 17);
+
+    if (moodTags.length > 3 || purposeTags.length > 3) {
+      throw new TooManyTagsError();
     }
 
     const result = await wardrobeService.updateItem(itemId, userId, itemData);
-
-    res.json({
-      message: '아이템 정보가 성공적으로 수정되었습니다.',
-      itemId: result.id
-    });
+    return res.status(200).json(new OkSuccess({ itemId: result.id }, "아이템 정보가 성공적으로 수정되었습니다."));
   } catch (err) {
     next(err);
   }
