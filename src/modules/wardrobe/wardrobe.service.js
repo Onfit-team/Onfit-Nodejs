@@ -229,3 +229,26 @@ export const autoClassifyItem = async (imagePath, prompt) => {
   const result = await analyzeImage(imagePath, prompt);
   return result; // { category, subcategory, season, color }
 };
+
+export const updateItem = async (itemId, userId, itemData) => {
+  // 아이템 존재 및 소유자 확인
+  const existingItem = await wardrobeRepo.findItemByItemId(itemId, userId);
+  if (!existingItem || existingItem.userId !== userId) {
+    const error = new Error('아이템을 찾을 수 없거나 권한이 없습니다.');
+    error.status = 404;
+    throw error;
+  }
+  // 날짜 변환
+  if (itemData.purchaseDate) {
+    itemData.purchaseDate = new Date(itemData.purchaseDate);
+  }
+
+  // 태그 업데이트: 기존 태그 제거 후 재등록
+  if (itemData.tagIds) {
+    await wardrobeRepo.clearItemTags(itemId);
+    await wardrobeRepo.createItemTags(itemId, itemData.tagIds);
+  }
+
+  // 나머지 필드 업데이트
+  return await wardrobeRepo.updateItem(itemId, itemData);
+};
