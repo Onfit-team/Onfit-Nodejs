@@ -143,3 +143,11 @@ export class WeatherApiError extends CustomError {
     super(reason, "WEATHER_API_ERROR", 500, data);
   }
 }
+
+// 태그 개수 제한 에러 (400)
+export class TooManyTagsError extends InvalidInputError {
+  constructor(reason = "무드/목적 태그는 각각 최대 3개까지만 선택 가능합니다.", data = null) {
+    super(reason, data);
+    this.errorCode = "TOO_MANY_TAGS";
+  }
+}
