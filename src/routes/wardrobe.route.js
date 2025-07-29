@@ -5,8 +5,9 @@ import {
   getWardrobeItemDetail,
   getWardrobeItemsByCategoryController,
   uploadWardrobeImage,
-  getOutfitsByItemController,
-  deleteWardrobeItemController
+  deleteWardrobeItemController,
+  getWardrobeBrandsByUserController,
+  getItemOutfitHistoryController,
   getWardrobeItemsByFilterController
 } from '../modules/wardrobe/wardrobe.controller.js';
 
@@ -19,9 +20,10 @@ const router = express.Router();
 
 router.get('/items', authenticateJWT, getWardrobeItemsController);
 router.get('/items/categories', authenticateJWT, getWardrobeItemsByCategoryController);
+router.get('/items/brands', authenticateJWT, getWardrobeBrandsByUserController);
 router.get('/items/filter', authenticateJWT, getWardrobeItemsByFilterController);
 router.get('/items/:itemId', authenticateJWT, getWardrobeItemDetail);
-router.get('/items/:itemId/outfits', authenticateJWT, getOutfitsByItemController);
+router.get('/items/:itemId/outfits', authenticateJWT, getItemOutfitHistoryController);
 router.post('/items', authenticateJWT, upload.single('image'), uploadWardrobeImage);
 router.delete('/items/:itemId', authenticateJWT, deleteWardrobeItemController);
 
