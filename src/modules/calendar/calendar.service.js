@@ -32,7 +32,7 @@ export const modifyOutfit = async (id, update) => {
   const isMemoSame = !update.memo || update.memo === outfit.memo;
   const isImageSame = !update.mainImage || update.mainImage === outfit.mainImage;
 
-  // ✅ 수정할 게 없으면 그대로 리턴
+  // 수정할 게 없으면 그대로 리턴
   if (isMemoSame && isImageSame) {
     return {
       data: {
