@@ -29,6 +29,33 @@ export const createItem = async (req, res, next) => {
   }
 };
 
+export const updateItem = async (req, res, next) => {
+  try {
+    const itemId = parseInt(req.params.itemId);
+    const userId = req.user.userId;
+    const itemData = req.body;
+
+    // tagIds 최대 3개 확인
+    if (itemData.tagIds && itemData.tagIds.length > 3) {
+      return res.status(400).json({
+        isSuccess: false,
+        code: 'INVALID_TAG',
+        message: '태그는 최대 3개까지만 선택 가능합니다.'
+      });
+    }
+
+    const result = await wardrobeService.updateItem(itemId, userId, itemData);
+
+    res.json({
+      message: '아이템 정보가 성공적으로 수정되었습니다.',
+      itemId: result.id
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
 export const getWardrobeItemsController = async (req, res, next) => {
   try {
     const userId = req.user.userId;
