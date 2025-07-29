@@ -30,4 +30,22 @@ router.delete(
   calendarController.deleteOutfit
 );
 
+router.patch(
+  '/outfit/:outfit_id/feelslike',
+  authenticateJWT,
+  calendarController.updateFeelsLikeTemp
+);
+
+router.get(
+  '/outfit/tag/most',
+  authenticateJWT,
+  calendarController.getTopStyleTag
+);
+
+router.get(
+  '/outfit/tag/sorted',
+  authenticateJWT,
+  calendarController.getSortedStyleTags
+);
+
 export default router;
