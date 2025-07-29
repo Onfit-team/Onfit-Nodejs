@@ -14,7 +14,6 @@ import modelRouter from './routes/model.route.js';
 import locationRouter from "./routes/location.route.js";
 import communityRouter from './routes/community.route.js';
 
-
 const app = express();
 app.use(express.json());
 app.use(passport.initialize());
