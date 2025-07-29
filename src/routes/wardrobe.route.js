@@ -7,7 +7,7 @@ import {
   uploadWardrobeImage,
   deleteWardrobeItemController,
   getWardrobeBrandsByUserController,
-  getOutfitsByItemController,
+  getItemOutfitHistoryController,
   getWardrobeItemsByFilterController
 } from '../modules/wardrobe/wardrobe.controller.js';
 
@@ -23,7 +23,7 @@ router.get('/items/categories', authenticateJWT, getWardrobeItemsByCategoryContr
 router.get('/items/brands', authenticateJWT, getWardrobeBrandsByUserController);
 router.get('/items/filter', authenticateJWT, getWardrobeItemsByFilterController);
 router.get('/items/:itemId', authenticateJWT, getWardrobeItemDetail);
-router.get('/items/:itemId/outfits', authenticateJWT, getOutfitsByItemController);
+router.get('/items/:itemId/outfits', authenticateJWT, getItemOutfitHistoryController);
 router.post('/items', authenticateJWT, upload.single('image'), uploadWardrobeImage);
 router.delete('/items/:itemId', authenticateJWT, deleteWardrobeItemController);
 
