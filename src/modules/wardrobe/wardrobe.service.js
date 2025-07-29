@@ -72,21 +72,56 @@ export const getWardrobeItemsByCategory = async (userId, category, subcategory, 
   });
 };
 
-export const getOutfitsByItem = async (userId, itemId) => {
+export const getItemOutfitHistory = async (userId, itemId) => {
+  // itemId 유효성 검사
+  const parsedItemId = Number(itemId);
+  if (isNaN(parsedItemId)) {
+    throw new Error('유효하지 않은 itemId입니다.');
+  }
+
   return await prisma.outfit.findMany({
     where: {
       userId,
       outfitItems: {
-        some: { itemId: Number(itemId) }
+        some: { itemId: parsedItemId }
       }
     },
     orderBy: { id: 'desc' },
     include: {
       outfitItems: {
-        include: { item: true }
+        include: { 
+          item: {
+            select: {
+              id: true,
+              category: true,
+              subcategory: true,
+              brand: true,
+              color: true,
+              size: true,
+              season: true,
+              image: true
+            }
+          }
+        }
       },
       outfitTags: {
-        include: { tag: true }
+        include: { 
+          tag: {
+            select: {
+              id: true,
+              name: true,
+              type: true
+            }
+          }
+        }
+      },
+      outfitLikes: true,
+      user: {
+        select: {
+          id: true,
+          nickname: true,
+          profileImage: true
+        }
       }
     }
   });
