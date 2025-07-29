@@ -10,16 +10,27 @@ import redisClient from "../../utils/redis.js";
 import { itemRepository } from "./item.repository.js";
 import { uploadToS3 } from "../../utils/s3.js";
 import { InvalidInputError, NotExistsError } from "../../utils/error.js";
-import { runYolo } from "./yolo.service.js";
+import { runPython } from "../../utils/python.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// 1. YOLO로 감지 후 크롭 저장
+// 1. YOLO 감지 후 크롭 및 Redis 저장
 export const detectAndCache = async (userId, file) => {
   if (!file || !file.buffer) throw new InvalidInputError("이미지 파일이 필요합니다.");
 
-  const results = await runYolo(file.buffer);
+  // 이미지 임시 저장
+  const tempPath = path.join(os.tmpdir(), `input-${uuidv4()}.png`);
+  fs.writeFileSync(tempPath, file.buffer);
+
+  // YOLOv8 추론 실행
+  const raw = await runPython(path.join(__dirname, "predict_v8.py"), [
+    path.join(__dirname, "yolo_models", "best.pt"),
+    tempPath,
+  ]);
+
+  const results = JSON.parse(raw);
+  console.log("YOLO 결과:", results);
   if (!results.length) throw new NotExistsError("감지된 객체 없음");
 
   const crops = [];
@@ -49,10 +60,11 @@ export const detectAndCache = async (userId, file) => {
     crops.push({ crop_id: cropId, category: label, bbox });
   }
 
+  fs.unlinkSync(tempPath); // 임시파일 제거
   return crops;
 };
 
-// 2. 리파인 (배경 제거 + DALL·E)
+// 2. 배경 제거 및 DALL·E 리파인
 export const refineItem = async (userId, cropId) => {
   const base64 = await redisClient.get(`crop:${userId}:${cropId}`);
   if (!base64) throw new NotExistsError("크롭 이미지가 만료되었습니다.");
@@ -108,7 +120,7 @@ export const refineItem = async (userId, cropId) => {
   return { refined_id: refinedId };
 };
 
-// 3. 최종 저장
+// 3. 최종 저장 → S3 업로드 + DB 등록
 export const saveItem = async (userId, refinedId) => {
   const base64 = await redisClient.get(`refined:${userId}:${refinedId}`);
   if (!base64) throw new NotExistsError("리파인 이미지가 만료되었습니다.");
