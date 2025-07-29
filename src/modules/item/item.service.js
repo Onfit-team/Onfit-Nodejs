@@ -1,21 +1,21 @@
-import { spawn } from "child_process";
 import sharp from "sharp";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 import os from "os";
+import path, { dirname } from "path";
+import { fileURLToPath } from "url";
+import FormData from "form-data";
 import redisClient from "../../utils/redis.js";
 import { itemRepository } from "./item.repository.js";
 import { uploadToS3 } from "../../utils/s3.js";
 import { InvalidInputError, NotExistsError } from "../../utils/error.js";
-import path, { dirname } from "path";
-import { fileURLToPath } from "url";
-import FormData from "form-data";
+import { runYolo } from "./yolo.service.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// ✅ YOLO로 객체 감지 및 크롭 저장 (bbox padding 제거)
+// 1. YOLO로 감지 후 크롭 저장
 export const detectAndCache = async (userId, file) => {
   if (!file || !file.buffer) throw new InvalidInputError("이미지 파일이 필요합니다.");
 
@@ -23,6 +23,7 @@ export const detectAndCache = async (userId, file) => {
   if (!results.length) throw new NotExistsError("감지된 객체 없음");
 
   const crops = [];
+
   for (const { class: label, bbox } of results) {
     let [x1, y1, x2, y2] = bbox.map(Math.round);
     const pad = 10;
@@ -51,7 +52,7 @@ export const detectAndCache = async (userId, file) => {
   return crops;
 };
 
-// ✅ refineItem: 배경 제거 → DALL·E 리터칭
+// 2. 리파인 (배경 제거 + DALL·E)
 export const refineItem = async (userId, cropId) => {
   const base64 = await redisClient.get(`crop:${userId}:${cropId}`);
   if (!base64) throw new NotExistsError("크롭 이미지가 만료되었습니다.");
@@ -107,18 +108,7 @@ export const refineItem = async (userId, cropId) => {
   return { refined_id: refinedId };
 };
 
-const runPython = (scriptPath, args = []) => {
-  return new Promise((resolve, reject) => {
-    const py = spawn("python", [scriptPath, ...args]);
-    let err = "";
-    py.stderr.on("data", (data) => (err += data.toString()));
-    py.on("close", (code) => {
-      if (code !== 0) return reject(new Error(`Python error: ${err}`));
-      resolve();
-    });
-  });
-};
-
+// 3. 최종 저장
 export const saveItem = async (userId, refinedId) => {
   const base64 = await redisClient.get(`refined:${userId}:${refinedId}`);
   if (!base64) throw new NotExistsError("리파인 이미지가 만료되었습니다.");
@@ -141,32 +131,4 @@ export const saveItem = async (userId, refinedId) => {
   });
 
   return { id: item.id, image_url: url };
-};
-
-const runYolo = async (buffer) => {
-  return new Promise((resolve, reject) => {
-    const predictPath = path.join(__dirname, "predict.py");
-    const modelPath = path.join(__dirname, "yolo_models", "best.pt");
-    const py = spawn("python", [predictPath, modelPath], {
-      stdio: ["pipe", "pipe", "pipe"],
-      cwd: __dirname
-    });
-
-    let output = "", errOutput = "";
-    py.stdout.on("data", (chunk) => (output += chunk));
-    py.stderr.on("data", (chunk) => (errOutput += chunk));
-
-    py.stdin.write(buffer);
-    py.stdin.end();
-
-    py.on("close", (code) => {
-      if (code !== 0) return reject(new Error("YOLO 실행 실패"));
-      try {
-        resolve(JSON.parse(output));
-      } catch (err) {
-        console.error("YOLO JSON 파싱 실패:", output);
-        reject(new Error("YOLO 결과 파싱 실패"));
-      }
-    });
-  });
 };
