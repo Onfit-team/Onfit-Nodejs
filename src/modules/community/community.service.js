@@ -156,3 +156,29 @@ export const publishTodayOutfitToCommunity = async (userId) => {
 
   return publishedOutfit;
 };
+
+// 커뮤니티에 공개된 아웃핏 삭제 (본인 소유만)
+export const deletePublishedOutfit = async (userId, outfitId) => {
+  // 1. 공개된 아웃핏이 맞고 본인 소유인지 확인
+  const outfit = await prisma.outfit.findFirst({
+    where: {
+      id: outfitId,
+      userId: userId,
+      isPublished: true
+    }
+  });
+
+  if (!outfit) {
+    throw new CustomError('삭제할 수 없는 아웃핏입니다. 존재하지 않거나 권한이 없습니다.', 403, 'FORBIDDEN');
+  }
+
+   // 연관 데이터 삭제
+  await prisma.outfitLike.deleteMany({ where: { outfitId } });
+  await prisma.outfitTag.deleteMany({ where: { outfitId } });
+  await prisma.outfitItem.deleteMany({ where: { outfitId } });
+
+  // 아웃핏 삭제
+  await prisma.outfit.delete({ where: { id: outfitId } });
+
+  return { message: '아웃핏 게시글이 삭제되었습니다.' };
+};
