@@ -69,3 +69,14 @@ export const deletePublishedOutfitController = async (req, res, next) => {
   }
 };
 
+export const checkTodayOutfitShareabilityController = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const canShare = await communityService.checkIfTodayOutfitCanBeShared(userId);
+    
+    return res.status(200).json(new OkSuccess(canShare, '오늘의 아웃핏 공유 가능 상태 조회 성공'));
+  } catch (err) {
+    next(err);
+  }
+};
+
