@@ -1,6 +1,6 @@
 // ✅ src/modules/community/community.controller.js
 import * as communityService from './community.service.js';
-import { OkSuccess } from '../../utils/success.js';
+import { OkSuccess, CreatedSuccess } from '../../utils/success.js';
 
 export const toggleOutfitLikeController = async (req, res, next) => {
   try {
@@ -34,3 +34,25 @@ export const getPublishedOutfitsByOutfitTagsController = async (req, res, next) 
     next(err);
   }
 };
+
+export const getTodayOutfitStatusController = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const status = await communityService.getTodayOutfitStatus(userId);
+    return res.status(200).json(new OkSuccess(status, '오늘의 아웃핏 상태 조회 성공'));
+  } catch (err) {
+    next(err);
+  }
+};
+
+// 오늘의 아웃핏을 커뮤니티에 공개
+export const publishTodayOutfitController = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const result = await communityService.publishTodayOutfitToCommunity(userId);
+    return res.status(200).json(new OkSuccess(result, '오늘의 아웃핏이 커뮤니티에 공개되었습니다.'));
+  } catch (err) {
+    next(err);
+  }
+};
+

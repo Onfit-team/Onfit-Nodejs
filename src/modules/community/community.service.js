@@ -67,3 +67,92 @@ export const getPublishedOutfitsByOutfitTagsController = async (req, res, next) 
     next(err);
   }
 };
+
+//오늘의 아웃핏 상태 조회
+export const getTodayOutfitStatus = async (userId) => {
+  const today = new Date();
+  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+
+  const todayOutfit = await prisma.outfit.findFirst({
+    where: {
+      userId,
+      date: {
+        gte: startOfDay,
+        lte: endOfDay
+      }
+    },
+    select: {
+      id: true,
+      date: true,
+      mainImage: true,
+      isPublished: true
+    }
+  });
+
+  // 간소화된 응답
+  if (!todayOutfit) {
+    return {
+      canPublish: false,
+      reason: "NO_TODAY_OUTFIT"
+    };
+  }
+
+  if (todayOutfit.isPublished) {
+    return {
+      canPublish: false,
+      reason: "ALREADY_PUBLISHED"
+    };
+  }
+
+  return {
+    canPublish: true,
+    date: todayOutfit.date,
+    mainImage: todayOutfit.mainImage
+  };
+};
+
+// 오늘의 아웃핏을 바로 커뮤니티에 공개 (기존 유지)
+export const publishTodayOutfitToCommunity = async (userId) => {
+  const today = new Date();
+  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+
+  const todayOutfit = await prisma.outfit.findFirst({
+    where: {
+      userId,
+      date: {
+        gte: startOfDay,
+        lte: endOfDay
+      }
+    },
+    include: {
+      outfitTags: {
+        include: { tag: true }
+      }
+    }
+  });
+
+  if (!todayOutfit) {
+    throw new CustomError('오늘 등록한 아웃핏이 없습니다.', 404, 'NO_TODAY_OUTFIT');
+  }
+
+  if (todayOutfit.isPublished) {
+    throw new CustomError('오늘의 아웃핏이 이미 커뮤니티에 공개되었습니다.', 400, 'ALREADY_PUBLISHED');
+  }
+
+  const publishedOutfit = await prisma.outfit.update({
+    where: { id: todayOutfit.id },
+    data: { isPublished: true },
+    include: {
+      user: {
+        select: { id: true, nickname: true, profileImage: true }
+      },
+      outfitTags: {
+        include: { tag: true }
+      }
+    }
+  });
+
+  return publishedOutfit;
+};
