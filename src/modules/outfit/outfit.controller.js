@@ -52,3 +52,13 @@ export const createOutfitController = async (req, res, next) => {
     next(new InvalidInputError("아웃핏 등록 실패", err.message));
   }
 };
+
+export const checkTodayOutfit = async (req, res, next) => {
+  try {
+    const userId = req.user.userId || req.user.id;
+    const canShare = await checkIfTodayOutfitCanBeShared(userId);
+    res.status(200).json(new OkSuccess({ canShare }, "오늘의 아웃핏 공유 가능 여부 조회 성공"));
+  } catch (err) {
+    next(err);
+  }
+};
