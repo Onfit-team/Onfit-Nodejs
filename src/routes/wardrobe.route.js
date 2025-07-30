@@ -4,11 +4,13 @@ import {
   getWardrobeItemsController,
   getWardrobeItemDetail,
   getWardrobeItemsByCategoryController,
-  uploadWardrobeImage,
   deleteWardrobeItemController,
   getWardrobeBrandsByUserController,
   getItemOutfitHistoryController,
-  getWardrobeItemsByFilterController
+  getWardrobeItemsByFilterController,
+  autoClassifyItem,
+  createItem,
+  updateItem
 } from '../modules/wardrobe/wardrobe.controller.js';
 
 import { authenticateJWT } from '../middlewares/auth.middleware.js';
@@ -24,7 +26,8 @@ router.get('/items/brands', authenticateJWT, getWardrobeBrandsByUserController);
 router.get('/items/filter', authenticateJWT, getWardrobeItemsByFilterController);
 router.get('/items/:itemId', authenticateJWT, getWardrobeItemDetail);
 router.get('/items/:itemId/outfits', authenticateJWT, getItemOutfitHistoryController);
-router.post('/items', authenticateJWT, upload.single('image'), uploadWardrobeImage);
 router.delete('/items/:itemId', authenticateJWT, deleteWardrobeItemController);
-
+router.post('/items/auto-classify', authenticateJWT, upload.single('image'), autoClassifyItem);
+router.post('/items', authenticateJWT, createItem);
+router.put('/items/:itemId', authenticateJWT, updateItem);
 export default router;
