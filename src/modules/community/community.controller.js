@@ -17,7 +17,7 @@ export const toggleOutfitLikeController = async (req, res, next) => {
 
 export const getPublishedOutfitsByOutfitTagsController = async (req, res, next) => {
   try {
-    const { outfit_tag_ids } = req.query;
+    const { outfit_tag_ids, order } = req.query;
     if (!outfit_tag_ids) {
       return res.status(400).json({ isSuccess: false, message: 'outfit_tag_ids 파라미터가 필요합니다.' });
     }
@@ -25,7 +25,8 @@ export const getPublishedOutfitsByOutfitTagsController = async (req, res, next) 
     if (outfitTagIds.length === 0) {
       return res.status(400).json({ isSuccess: false, message: '유효한 outfit_tag_ids가 필요합니다.' });
     }
-    const outfits = await communityService.getPublishedOutfitsByOutfitTags(outfitTagIds);
+    // order: 'latest'(기본) | 'popular'
+    const outfits = await communityService.getPublishedOutfitsByOutfitTags(outfitTagIds, order);
     if (!outfits || outfits.length === 0) {
       return res.status(200).json({ isSuccess: true, result: [], message: '해당하는 아웃핏이 없습니다.' });
     }
@@ -64,6 +65,17 @@ export const deletePublishedOutfitController = async (req, res, next) => {
     const result = await communityService.deletePublishedOutfit(userId, outfitId);
 
     return res.status(200).json(new OkSuccess(result, '아웃핏 게시글이 삭제되었습니다.'));
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const checkTodayOutfitShareabilityController = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const canShare = await communityService.checkIfTodayOutfitCanBeShared(userId);
+    
+    return res.status(200).json(new OkSuccess(canShare, '오늘의 아웃핏 공유 가능 상태 조회 성공'));
   } catch (err) {
     next(err);
   }
