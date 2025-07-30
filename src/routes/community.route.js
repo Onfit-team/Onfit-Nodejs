@@ -3,7 +3,8 @@ import {
     toggleOutfitLikeController,
     getPublishedOutfitsByOutfitTagsController,
     getTodayOutfitStatusController,
-    publishTodayOutfitController
+    publishTodayOutfitController,
+    deletePublishedOutfitController
 } from '../modules/community/community.controller.js';
 import { authenticateJWT } from '../middlewares/auth.middleware.js';
 
@@ -18,5 +19,8 @@ router.get('/today-outfit-status', authenticateJWT, getTodayOutfitStatusControll
 
 // 오늘의 아웃핏을 바로 커뮤니티에 공개
 router.patch('/publish-today-outfit', authenticateJWT, publishTodayOutfitController);
+
+// DELETE /community/outfits/:outfitId
+router.delete('/outfits/:outfitId', authenticateJWT, deletePublishedOutfitController);
 
 export default router;
