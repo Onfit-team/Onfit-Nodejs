@@ -22,28 +22,55 @@ export const findItemById = async (userId, itemId) => {
   });
 };
 
-// export const wardrobeRepository = {
-//   createItem: (data) =>
-//     prisma.item.create({
-//       data,
-//     }),
-// };
+export const createItem = async (data) => {
+  return await prisma.item.create({ data });
+};
 
-export const wardrobeRepository = {
-  createItem: async (data) => {
-    const requiredFields = ['userId', 'category', 'subcategory', 'color', 'season'];
+export const createItemTags = async (itemId, tagIds) => {
+  const itemTags = tagIds.map((tagId) => ({
+    itemId,
+    tagId,
+  }));
 
-    console.log('📦 Item 저장 시도:', data);
+  return await prisma.itemTag.createMany({ data: itemTags });
+};
 
-    const missing = requiredFields.filter((key) => data[key] === undefined || data[key] === null);
+// 아이템 수정
+export const updateItem = async (itemId, data) => {
+  const { tagIds, ...updateFields } = data;
 
-    if (missing.length > 0) {
-      console.error('❌ 누락된 필수 필드:', missing);
-      throw new Error(`다음 필드가 누락됨: ${missing.join(', ')}`);
-    }
+  return await prisma.item.update({
+    where: { id: parseInt(itemId) },
+    data: updateFields,
+  });
+};
 
-    return await prisma.item.create({
-      data,
-    });
-  },
+// 기존 태그 삭제
+export const clearItemTags = async (itemId) => {
+  return await prisma.itemTag.deleteMany({
+    where: { itemId: parseInt(itemId) },
+  });
+};
+
+
+export const findItemByItemId = async (itemId, userId) => {
+  return await prisma.item.findFirst({
+    where: {
+      id: itemId,
+      userId,
+      isDeleted: false,
+    },
+    select: {
+      id: true,
+      userId: true,
+      category: true,
+      subcategory: true,
+      brand: true,
+      color: true,
+      size: true,
+      season: true,
+      purchaseDate: true,
+      image: true,
+    },
+  });
 };

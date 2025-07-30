@@ -1,8 +1,54 @@
 // src/modules/wardrobe/wardrobe.controller.js
 import * as wardrobeService from './wardrobe.service.js';
-import { analyzeAndSaveItem } from './wardrobe.service.js';
-import { OkSuccess } from '../../utils/success.js';
+import { OkSuccess, CreatedSuccess } from '../../utils/success.js';
+import { TooManyTagsError } from '../../utils/error.js';
 import { WardrobeFilterDto } from './wardrobe.dto.js';
+
+export const createItem = async (req, res, next) => {
+  try {
+    const userId = req.user.userId; // JWT 인증 미들웨어로부터
+    const itemData = req.body;
+
+    const tagIds = itemData.tagIds || [];
+
+    // 태그 분류 (1~9: mood, 10~17: purpose)
+    const moodTags = tagIds.filter(id => id >= 1 && id <= 9);
+    const purposeTags = tagIds.filter(id => id >= 10 && id <= 17);
+
+    if (moodTags.length > 3 || purposeTags.length > 3) {
+      throw new TooManyTagsError();
+    }
+
+    const itemId = await wardrobeService.createItem(userId, itemData);
+    return res.status(201).json(new CreatedSuccess({ itemId }, "아이템이 성공적으로 등록되었습니다."));
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateItem = async (req, res, next) => {
+  try {
+    const itemId = parseInt(req.params.itemId);
+    const userId = req.user.userId;
+    const itemData = req.body;
+
+    const tagIds = itemData.tagIds || [];
+
+    // 태그 분류
+    const moodTags = tagIds.filter(id => id >= 1 && id <= 9);
+    const purposeTags = tagIds.filter(id => id >= 10 && id <= 17);
+
+    if (moodTags.length > 3 || purposeTags.length > 3) {
+      throw new TooManyTagsError();
+    }
+
+    const result = await wardrobeService.updateItem(itemId, userId, itemData);
+    return res.status(200).json(new OkSuccess({ itemId: result.id }, "아이템 정보가 성공적으로 수정되었습니다."));
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 export const getWardrobeItemsController = async (req, res, next) => {
   try {
@@ -63,22 +109,6 @@ export const getWardrobeItemsByFilterController = async (req, res, next) => {
   }
 };
 
-export const uploadWardrobeImage = async (req, res, next) => {
-  try {
-    const { file, user } = req;
-    const result = await analyzeAndSaveItem(file.path, user.userId);
-
-    res.status(200).json({
-      isSuccess: true,
-      message: "자동 태깅 및 저장 완료",
-      result,
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-
-
 export const getItemOutfitHistoryController = async (req, res, next) => {
   try {
     const userId = req.user.userId;
@@ -126,5 +156,31 @@ export const getWardrobeBrandsByUserController = async (req, res, next) => {
     return res.status(200).json(new OkSuccess(brands));
   } catch (err) {
     next(err);
+  }
+};
+
+export const autoClassifyItem = async (req, res, next) => {
+  try {
+    const image = req.file;
+    const { prompt } = req.body;
+
+    if (!image) {
+      return res.status(400).json({
+        isSuccess: false,
+        code: 'NO_IMAGE',
+        message: '이미지가 필요합니다.',
+      });
+    }
+
+    const result = await wardrobeService.autoClassifyItem(image.path, prompt);
+
+    res.status(200).json({
+      isSuccess: true,
+      code: 'AUTO200',
+      message: '이미지 분석이 완료되었습니다.',
+      result,
+    });
+  } catch (error) {
+    next(error);
   }
 };
