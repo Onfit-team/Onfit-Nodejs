@@ -1,6 +1,8 @@
 export const errorHandler = (err, req, res, next) => {
   if (err instanceof Error && err.errorCode && err.statusCode) {
-    res.status(err.statusCode).json({
+    let statusCode = typeof err.statusCode === 'number' ? err.statusCode : parseInt(err.statusCode, 10);
+    if (isNaN(statusCode)) statusCode = 500;
+    res.status(statusCode).json({
       resultType: "FAIL",
       error: {
         errorCode: err.errorCode,

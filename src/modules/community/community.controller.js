@@ -56,3 +56,16 @@ export const publishTodayOutfitController = async (req, res, next) => {
   }
 };
 
+export const deletePublishedOutfitController = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const outfitId = parseInt(req.params.outfitId);
+
+    const result = await communityService.deletePublishedOutfit(userId, outfitId);
+
+    return res.status(200).json(new OkSuccess(result, '아웃핏 게시글이 삭제되었습니다.'));
+  } catch (err) {
+    next(err);
+  }
+};
+
