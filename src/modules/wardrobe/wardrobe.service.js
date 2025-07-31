@@ -69,23 +69,48 @@ export const getWardrobeItemDetail = async (userId, itemId) => {
       userId,
       isDeleted: false,
     },
-    select: {
-      id: true,
-      category: true,
-      subcategory: true,
-      brand: true,
-      color: true,
-      size: true,
-      season: true,
-      purchaseDate: true,
-      image: true,
-    },
+    include: {
+      itemTags: {         // 태그 정보 추가
+        include: {
+          tag: {
+            select: {
+              id: true,
+              name: true,
+              type: true
+            }
+          }
+        }
+      }
+    }
   });
 
   if (!item) {
     throw new CustomError('해당 아이템을 찾을 수 없습니다.', 404, 'NOT_FOUND');
   }
-  return item;
+
+  // 태그를 타입별로 분류
+  const tags = item.itemTags.map(itemTag => itemTag.tag);
+  const moodTags = tags.filter(tag => tag.type === 'mood');
+  const purposeTags = tags.filter(tag => tag.type === 'purpose');
+
+  // 반환 데이터 구조화
+  return {
+    id: item.id,
+    category: item.category,
+    subcategory: item.subcategory,
+    brand: item.brand,
+    color: item.color,
+    size: item.size,
+    season: item.season,
+    purchaseDate: item.purchaseDate,
+    image: item.image,
+    price: item.price,
+    purchaseSite: item.purchaseSite,
+    tags: {
+      moodTags,
+      purposeTags
+    }
+  };
 };
 
 export const getWardrobeItemsByCategory = async (userId, category, subcategory, itemId) => {
