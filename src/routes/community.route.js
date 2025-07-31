@@ -8,7 +8,8 @@ import {
     checkTodayOutfitShareabilityController,
     getOutfitTagsController,
     getOutfitDetailController,
-    getCommunityOutfitsController
+    getCommunityOutfitsController,
+    getYesterdayTopOutfitsController
 } from '../modules/community/community.controller.js';
 import { authenticateJWT } from '../middlewares/auth.middleware.js';
 
@@ -30,13 +31,17 @@ router.get('/outfits/today/check', authenticateJWT, checkTodayOutfitShareability
 // 특정 아웃핏의 태그 조회 (mood/purpose 구분) - 구체적인 경로를 먼저
 router.get('/outfits/:outfitId/tags', authenticateJWT, getOutfitTagsController);
 
+
+// 커뮤니티에 공개된 아웃핏 목록 조회 (최신순/인기순)
+router.get('/outfits', authenticateJWT, getCommunityOutfitsController);
+
+//top3outfit조회
+router.get('/outfits/top3', authenticateJWT,getYesterdayTopOutfitsController);
+
 // 커뮤니티 게시글 상세 조회
 router.get('/outfits/:outfitId', authenticateJWT, getOutfitDetailController);
 
 // DELETE /community/outfits/:outfitId
 router.delete('/outfits/:outfitId', authenticateJWT, deletePublishedOutfitController);
-
-// 커뮤니티에 공개된 아웃핏 목록 조회 (최신순/인기순)
-router.get('/outfits', authenticateJWT, getCommunityOutfitsController);
 
 export default router;
