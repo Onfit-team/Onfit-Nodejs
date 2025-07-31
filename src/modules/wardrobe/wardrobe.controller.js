@@ -208,3 +208,34 @@ export const autoClassifyItem = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getRecommendedCoordinatedItemsController = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const { itemId } = req.params;
+    const parsedItemId = parseInt(itemId, 10);
+
+    if (!itemId || isNaN(parsedItemId)) {
+      return res.status(400).json({
+        isSuccess: false,
+        message: 'itemId가 올바르지 않습니다.'
+      });
+    }
+
+    const recommendedItems = await wardrobeService.getRecommendedCoordinatedItems(userId, parsedItemId);
+    
+    if (!recommendedItems || recommendedItems.length === 0) {
+      return res.status(200).json(new OkSuccess([], '추천할 수 있는 아이템이 없습니다'));
+    }
+
+    return res.status(200).json(new OkSuccess(recommendedItems, '코디 추천 아이템 조회 성공'));
+  } catch (err) {
+    if (err.message === '해당 아이템을 찾을 수 없습니다.') {
+      return res.status(404).json({
+        isSuccess: false,
+        message: err.message
+      });
+    }
+    next(err);
+  }
+};

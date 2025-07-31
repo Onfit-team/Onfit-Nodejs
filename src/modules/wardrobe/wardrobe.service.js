@@ -256,3 +256,228 @@ export const updateItem = async (itemId, userId, itemData) => {
 export const getItemCategoryInfo = async (itemId, userId) => {
   return await wardrobeRepo.findItemCategoryById(itemId, userId);
 };
+
+// 계절 판별 함수 (평균 기온 기준)
+const getSeasonFromTemp = (tempAvg) => {
+  if (tempAvg >= 23) return 2; // 여름
+  if (tempAvg >= 20) return [1, 3]; // 봄가을 (간절기 포함)
+  if (tempAvg >= 8) return 3; // 겨울
+  return 3; // 겨울 (0도 이하)
+};
+
+// 카테고리별 추천 가능한 카테고리 매핑
+const getRecommendableCategories = (baseCategory) => {
+  switch (baseCategory) {
+    case 1: // 상의
+      return [2, 4, 5, 6]; // 하의, 아우터, 신발, 액세서리
+    case 2: // 하의
+      return [1, 4, 5, 6]; // 상의, 아우터, 신발, 액세서리
+    case 3: // 원피스
+      return [4, 5, 6]; // 아우터, 신발, 액세서리 (상의/하의 제외)
+    case 4: // 아우터
+      return [1, 2, 5, 6]; // 상의, 하의, 신발, 액세서리
+    case 5: // 신발
+      return [1, 2, 4]; // 상의, 하의, 아우터
+    case 6: // 액세서리
+      return [1, 2, 4]; // 상의, 하의, 아우터
+    default:
+      return [];
+  }
+};
+
+// 계절 매칭 점수 계산
+const calculateSeasonScore = (baseSeason, recommendSeason) => {
+  // 동일 계절
+  if (baseSeason === recommendSeason) return 10;
+  
+  // 간절기와 여름/겨울 매칭
+  if ((baseSeason === 1 && (recommendSeason === 2 || recommendSeason === 3)) ||
+      (recommendSeason === 1 && (baseSeason === 2 || baseSeason === 3))) {
+    return 7;
+  }
+  
+  return 0;
+};
+
+// 색상 매칭 점수 계산
+const calculateColorScore = (baseColor, recommendColor) => {
+  // 동일 색상
+  if (baseColor === recommendColor) return 10;
+  
+  // 색상 매칭 규칙 매핑
+  const colorRules = {
+    1: { // 화이트
+      complementary: [2, 5], // 블랙, 네이비/블루
+      neutral: [4, 3, 5, 6] // 베이지/브라운, 그레이, 네이비/블루, 레드/핑크
+    },
+    2: { // 블랙
+      complementary: [1, 6, 4], // 화이트, 레드/핑크, 베이지/브라운
+      neutral: [5, 3, 9] // 네이비/블루, 그레이, 퍼플
+    },
+    3: { // 그레이
+      complementary: [6, 7], // 레드/핑크, 오렌지/옐로우
+      neutral: [1, 2, 5] // 화이트, 블랙, 네이비/블루
+    },
+    4: { // 베이지/브라운
+      complementary: [5, 8], // 네이비/블루, 그린
+      neutral: [1, 2, 7] // 화이트, 블랙, 오렌지/옐로우
+    },
+    5: { // 네이비/블루
+      complementary: [4, 1], // 베이지/브라운, 화이트
+      neutral: [6, 3] // 레드/핑크, 그레이
+    },
+    6: { // 레드/핑크
+      complementary: [2, 1], // 블랙, 화이트
+      neutral: [5, 3] // 네이비/블루, 그레이
+    },
+    7: { // 오렌지/옐로우
+      complementary: [3, 2], // 그레이, 블랙
+      neutral: [4] // 베이지/브라운
+    },
+    8: { // 그린
+      complementary: [4], // 베이지/브라운
+      neutral: [1, 5] // 화이트, 네이비/블루
+    },
+    9: { // 퍼플
+      complementary: [3, 2], // 그레이, 블랙
+      neutral: [1] // 화이트
+    },
+    10: { // 멀티/패턴
+      complementary: [2, 1], // 블랙, 화이트
+      neutral: [3, 4] // 그레이, 베이지
+    }
+  };
+  
+  const rule = colorRules[baseColor];
+  if (!rule) return 0;
+  
+  // 상보색 조화
+  if (rule.complementary.includes(recommendColor)) return 8;
+  
+  // 무난한 조합
+  if (rule.neutral.includes(recommendColor)) return 5;
+  
+  return 0;
+};
+
+// 스타일 태그 매칭 점수 계산
+const calculateTagScore = (baseTags, recommendTags) => {
+  if (!baseTags || baseTags.length === 0 || !recommendTags || recommendTags.length === 0) {
+    return 0;
+  }
+  
+  const baseTagIds = baseTags.map(tag => tag.tagId);
+  const recommendTagIds = recommendTags.map(tag => tag.tagId);
+  
+  // 기준 아이템의 모든 태그가 추천 아이템에 포함되어 있는지 확인 (100% 일치)
+  const allBaseTagsIncluded = baseTagIds.every(tagId => recommendTagIds.includes(tagId));
+  if (allBaseTagsIncluded) return 10;
+  
+  // 1개 이상 부분 일치
+  const hasCommonTag = baseTagIds.some(tagId => recommendTagIds.includes(tagId));
+  if (hasCommonTag) return 5;
+  
+  return 0;
+};
+
+// 옷장 아이템 추천
+export const getRecommendedCoordinatedItems = async (userId, itemId) => {
+  // 기준 아이템 조회
+  const baseItem = await prisma.item.findFirst({
+    where: {
+      id: itemId,
+      userId,
+      isDeleted: false
+    },
+    include: {
+      itemTags: {
+        include: {
+          tag: true
+        }
+      }
+    }
+  });
+  
+  if (!baseItem) {
+    throw new Error('해당 아이템을 찾을 수 없습니다.');
+  }
+  
+  // 추천 가능한 카테고리 가져오기
+  const recommendableCategories = getRecommendableCategories(baseItem.category);
+  if (recommendableCategories.length === 0) {
+    return [];
+  }
+  
+  // 추천 후보 아이템들 조회 (기준 아이템 제외)
+  const candidateItems = await prisma.item.findMany({
+    where: {
+      userId,
+      isDeleted: false,
+      category: {
+        in: recommendableCategories
+      },
+      id: {
+        not: itemId // 기준 아이템 제외
+      }
+    },
+    include: {
+      itemTags: {
+        include: {
+          tag: true
+        }
+      }
+    }
+  });
+  
+  // 각 후보 아이템의 점수 계산
+  const scoredItems = candidateItems.map(item => {
+    let totalScore = 0;
+    
+    // 계절 매칭 점수
+    const seasonScore = calculateSeasonScore(baseItem.season, item.season);
+    totalScore += seasonScore;
+    
+    // 색상 매칭 점수
+    const colorScore = calculateColorScore(baseItem.color, item.color);
+    totalScore += colorScore;
+    
+    // 스타일 태그 매칭 점수
+    const tagScore = calculateTagScore(baseItem.itemTags, item.itemTags);
+    totalScore += tagScore;
+    
+    return {
+      ...item,
+      matchingScore: totalScore,
+      scoreBreakdown: {
+        season: seasonScore,
+        color: colorScore,
+        tag: tagScore
+      }
+    };
+  });
+  
+  // 22점 이상인 아이템만 필터링하고 점수순으로 정렬하여 상위 5개 선택
+  const recommendedItems = scoredItems
+    .filter(item => item.matchingScore >= 22)
+    .sort((a, b) => b.matchingScore - a.matchingScore)
+    .slice(0, 5)
+    .map(item => ({
+      id: item.id,
+      category: item.category,
+      subcategory: item.subcategory,
+      brand: item.brand,
+      color: item.color,
+      size: item.size,
+      season: item.season,
+      image: item.image,
+      tags: item.itemTags.map(itemTag => ({
+        id: itemTag.tag.id,
+        name: itemTag.tag.name,
+        type: itemTag.tag.type
+      })),
+      matchingScore: item.matchingScore,
+      scoreBreakdown: item.scoreBreakdown
+    }));
+  
+  return recommendedItems;
+};
