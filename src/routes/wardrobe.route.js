@@ -11,7 +11,8 @@ import {
   autoClassifyItem,
   createItem,
   updateItem,
-  getItemCategoryInfo
+  getItemCategoryInfo,
+  getRecommendedCoordinatedItemsController
 } from '../modules/wardrobe/wardrobe.controller.js';
 
 import { authenticateJWT } from '../middlewares/auth.middleware.js';
@@ -27,6 +28,7 @@ router.get('/items/brands', authenticateJWT, getWardrobeBrandsByUserController);
 router.get('/items/filter', authenticateJWT, getWardrobeItemsByFilterController);
 router.get('/items/:itemId', authenticateJWT, getWardrobeItemDetail);
 router.get('/items/:itemId/outfits', authenticateJWT, getItemOutfitHistoryController);
+router.get('/items/:itemId/recommendations', authenticateJWT, getRecommendedCoordinatedItemsController);
 router.delete('/items/:itemId', authenticateJWT, deleteWardrobeItemController);
 router.post('/items/auto-classify', authenticateJWT, upload.single('image'), autoClassifyItem);
 router.post('/items', authenticateJWT, createItem);
