@@ -5,7 +5,8 @@ import {
     getTodayOutfitStatusController,
     publishTodayOutfitController,
     deletePublishedOutfitController,
-    checkTodayOutfitShareabilityController
+    checkTodayOutfitShareabilityController,
+    getOutfitTagsController
 } from '../modules/community/community.controller.js';
 import { authenticateJWT } from '../middlewares/auth.middleware.js';
 
@@ -26,5 +27,8 @@ router.delete('/outfits/:outfitId', authenticateJWT, deletePublishedOutfitContro
 
 //오늘 아웃핏 등록 여부 true, false 반환 -> 공유 버튼 활성화
 router.get('/outfits/today/check', authenticateJWT, checkTodayOutfitShareabilityController);
+
+// 특정 아웃핏의 태그 조회 (mood/purpose 구분)
+router.get('/outfits/:outfitId/tags', authenticateJWT, getOutfitTagsController);
 
 export default router;

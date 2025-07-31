@@ -81,3 +81,29 @@ export const checkTodayOutfitShareabilityController = async (req, res, next) => 
   }
 };
 
+export const getOutfitTagsController = async (req, res, next) => {
+  try {
+    const { outfitId } = req.params;
+    const parsedOutfitId = parseInt(outfitId, 10);
+    
+    if (!outfitId || isNaN(parsedOutfitId)) {
+      return res.status(400).json({
+        isSuccess: false,
+        message: 'outfitId가 올바르지 않습니다.'
+      });
+    }
+
+    const outfitTags = await communityService.getOutfitTags(parsedOutfitId);
+    
+    return res.status(200).json(new OkSuccess(outfitTags, '아웃핏 태그 조회 성공'));
+  } catch (err) {
+    if (err.message === '해당 아웃핏을 찾을 수 없거나 공개되지 않은 아웃핏입니다.') {
+      return res.status(404).json({
+        isSuccess: false,
+        message: err.message
+      });
+    }
+    next(err);
+  }
+};
+
