@@ -224,3 +224,91 @@ export const getOutfitTags = async (outfitId) => {
     purposeTags
   };
 };
+
+// 커뮤니티 게시글 상세 조회
+export const getOutfitDetail = async (outfitId, currentUserId) => {
+  // 아웃핏이 존재하고 공개된 상태인지 확인
+  const outfit = await prisma.outfit.findFirst({
+    where: {
+      id: outfitId,
+      isPublished: true
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          nickname: true,
+          profileImage: true
+        }
+      },
+      outfitItems: {
+        include: {
+          item: {
+            select: {
+              id: true,
+              category: true,
+              subcategory: true,
+              brand: true,
+              color: true,
+              size: true,
+              season: true,
+              image: true
+            }
+          }
+        }
+      },
+      outfitTags: {
+        include: {
+          tag: {
+            select: {
+              id: true,
+              name: true,
+              type: true
+            }
+          }
+        }
+      },
+      outfitLikes: {
+        select: {
+          id: true,
+          userId: true
+        }
+      }
+    }
+  });
+
+  if (!outfit) {
+    throw new Error('해당 아웃핏을 찾을 수 없거나 공개되지 않은 아웃핏입니다.');
+  }
+
+  // 태그들을 mood와 purpose로 분류
+  const tags = outfit.outfitTags.map(outfitTag => outfitTag.tag);
+  const moodTags = tags.filter(tag => tag.type === 'mood');
+  const purposeTags = tags.filter(tag => tag.type === 'purpose');
+
+  // 현재 사용자가 좋아요를 눌렀는지 확인
+  const isLikedByCurrentUser = outfit.outfitLikes.some(like => like.userId === currentUserId);
+
+  // 내 게시글인지 확인
+  const isMyPost = outfit.user.id === currentUserId;
+
+  return {
+    outfitId: outfit.id,
+    author: outfit.user,
+    date: outfit.date,
+    mainImage: outfit.mainImage,
+    memo: outfit.memo,
+    weatherTempAvg: outfit.weatherTempAvg,
+    feelsLikeTemp: outfit.feelsLikeTemp,
+    items: outfit.outfitItems.map(outfitItem => outfitItem.item),
+    tags: {
+      moodTags,
+      purposeTags
+    },
+    likes: {
+      count: outfit.outfitLikes.length,
+      isLikedByCurrentUser
+    },
+    isMyPost
+  };
+};
