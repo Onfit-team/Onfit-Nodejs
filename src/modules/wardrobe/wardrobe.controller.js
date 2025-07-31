@@ -1,8 +1,32 @@
 // src/modules/wardrobe/wardrobe.controller.js
 import * as wardrobeService from './wardrobe.service.js';
 import { OkSuccess, CreatedSuccess } from '../../utils/success.js';
-import { TooManyTagsError } from '../../utils/error.js';
+import { TooManyTagsError, NotExistsError} from '../../utils/error.js';
 import { WardrobeFilterDto } from './wardrobe.dto.js';
+
+export const getItemCategoryInfo = async (req, res, next) => {
+  try {
+    const itemId = parseInt(req.params.itemId);
+    const userId = req.user.userId;
+
+    const item = await wardrobeService.getItemCategoryInfo(itemId, userId);
+
+    if (!item) {
+      throw new NotExistsError('아이템을 찾을 수 없거나 권한이 없습니다.');
+    }
+
+    const result = {
+      category: item.category,
+      subcategory: item.subcategory,
+      season: item.season,
+      color: item.color
+    };
+
+    res.json(new OkSuccess(result, "아이템 분류 정보 조회 성공"));
+  } catch (err) {
+    next(err);
+  }
+};
 
 export const createItem = async (req, res, next) => {
   try {

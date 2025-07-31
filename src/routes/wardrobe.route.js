@@ -10,7 +10,8 @@ import {
   getWardrobeItemsByFilterController,
   autoClassifyItem,
   createItem,
-  updateItem
+  updateItem,
+  getItemCategoryInfo
 } from '../modules/wardrobe/wardrobe.controller.js';
 
 import { authenticateJWT } from '../middlewares/auth.middleware.js';
@@ -30,4 +31,6 @@ router.delete('/items/:itemId', authenticateJWT, deleteWardrobeItemController);
 router.post('/items/auto-classify', authenticateJWT, upload.single('image'), autoClassifyItem);
 router.post('/items', authenticateJWT, createItem);
 router.put('/items/:itemId', authenticateJWT, updateItem);
+router.get('/categories/:itemId', authenticateJWT, getItemCategoryInfo);
+
 export default router;
