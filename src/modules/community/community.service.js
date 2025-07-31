@@ -312,3 +312,69 @@ export const getOutfitDetail = async (outfitId, currentUserId) => {
     isMyPost
   };
 };
+
+
+
+export const getCommunityOutfits = async (order = 'latest', page = 1, limit = 20) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // 오늘 00:00:00 시작 시간
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1); // 내일 00:00:00
+
+  const orderBy = order === 'popular'
+    ? [{ outfitLikes: { _count: 'desc' } }, { id: 'desc' }]
+    : [{ id: 'desc' }];
+
+  const offset = (page - 1) * limit;
+
+  return await prisma.outfit.findMany({
+    where: {
+      isPublished: true,
+      date: {
+        gte: today,
+        lt: tomorrow,
+      }
+    },
+    orderBy,
+    skip: offset,
+    take: limit,
+    include: {
+      user: { select: { id: true, nickname: true, profileImage: true } },
+      outfitTags: { include: { tag: true } },
+      _count: {
+        select: { outfitLikes: true }
+      }
+    },
+  });
+};
+
+export const getYesterdayTopOutfits = async () => {
+  const now = new Date();                  // 현재 시각
+  const yesterday = new Date(now);        // 오늘 복사
+  yesterday.setDate(now.getDate() - 1);   // 어제 날짜로 변경
+  yesterday.setHours(0, 0, 0, 0);         // 어제 00:00:00
+
+  const nextDay = new Date(yesterday);
+  nextDay.setDate(yesterday.getDate() + 1); // 어제 + 1일 = 오늘 00:00:00
+
+  return await prisma.outfit.findMany({
+    where: {
+      isPublished: true,
+      date: {
+        gte: yesterday,
+        lt: nextDay
+      }
+    },
+    orderBy: [
+      { outfitLikes: { _count: 'desc' } },
+      { id: 'desc' }
+    ],
+    take: 3,
+    include: {
+      user: { select: { nickname: true } },
+      _count: { select: { outfitLikes: true } }
+    }
+  });
+};
+
