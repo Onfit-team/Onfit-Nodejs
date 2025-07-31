@@ -83,6 +83,14 @@ export const getHomeRecommendItems = async (userId) => {
     if (extra) selected.push(extra);
   }
 
+  // 6. 추천 아이템이 없으면 에러 던지기
+  if (selected.length === 0) {
+    const error = new Error('추천할 아이템이 없습니다.');
+    error.errorCode = 'I404';
+    throw error;
+  }
+
+  // 7. 일교차 경고 메시지
   let diurnalMsg;
   if (
     todayWeather?.weather?.tempMax != null &&
