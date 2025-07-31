@@ -312,3 +312,39 @@ export const getOutfitDetail = async (outfitId, currentUserId) => {
     isMyPost
   };
 };
+
+
+
+export const getCommunityOutfits = async (order = 'latest', page = 1, limit = 20) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // 오늘 00:00:00 시작 시간
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1); // 내일 00:00:00
+
+  const orderBy = order === 'popular'
+    ? [{ outfitLikes: { _count: 'desc' } }, { id: 'desc' }]
+    : [{ id: 'desc' }];
+
+  const offset = (page - 1) * limit;
+
+  return await prisma.outfit.findMany({
+    where: {
+      isPublished: true,
+      date: {
+        gte: today,
+        lt: tomorrow,
+      }
+    },
+    orderBy,
+    skip: offset,
+    take: limit,
+    include: {
+      user: { select: { id: true, nickname: true, profileImage: true } },
+      outfitTags: { include: { tag: true } },
+      _count: {
+        select: { outfitLikes: true }
+      }
+    },
+  });
+};
