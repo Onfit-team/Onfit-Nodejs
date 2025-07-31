@@ -47,27 +47,6 @@ export const getPublishedOutfitsByOutfitTags = async (outfitTagIds, order = 'lat
   });
 };
 
-export const getPublishedOutfitsByOutfitTagsController = async (req, res, next) => {
-  try {
-    const { outfit_tag_ids, order } = req.query;
-    if (!outfit_tag_ids) {
-      return res.status(400).json({ isSuccess: false, message: 'outfit_tag_ids 파라미터가 필요합니다.' });
-    }
-    const outfitTagIds = outfit_tag_ids.split(',').map(id => Number(id.trim())).filter(Boolean);
-    if (outfitTagIds.length === 0) {
-      return res.status(400).json({ isSuccess: false, message: '유효한 outfit_tag_ids가 필요합니다.' });
-    }
-    // order: 'latest'(기본) | 'popular'
-    const outfits = await communityService.getPublishedOutfitsByOutfitTags(outfitTagIds, order);
-    if (!outfits || outfits.length === 0) {
-      return res.status(200).json({ isSuccess: true, result: [], message: '해당하는 아웃핏이 없습니다.' });
-    }
-    return res.status(200).json({ isSuccess: true, result: outfits });
-  } catch (err) {
-    next(err);
-  }
-};
-
 //오늘의 아웃핏 상태 조회
 export const getTodayOutfitStatus = async (userId) => {
   const today = new Date();
@@ -181,4 +160,28 @@ export const deletePublishedOutfit = async (userId, outfitId) => {
   await prisma.outfit.delete({ where: { id: outfitId } });
 
   return { message: '아웃핏 게시글이 삭제되었습니다.' };
+};
+
+export const checkIfTodayOutfitCanBeShared = async (userId) => {
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const todayOutfit = await prisma.outfit.findFirst({
+    where: {
+      userId,
+      date: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+    },
+    select: {
+      isPublished: true,
+    },
+  });
+
+  // todayOutfit이 존재하고, isPublished가 false일 때만 true를 반환
+  return !!todayOutfit && !todayOutfit.isPublished;
 };
