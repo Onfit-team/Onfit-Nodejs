@@ -252,3 +252,7 @@ export const updateItem = async (itemId, userId, itemData) => {
   // 나머지 필드 업데이트
   return await wardrobeRepo.updateItem(itemId, itemData);
 };
+
+export const getItemCategoryInfo = async (itemId, userId) => {
+  return await wardrobeRepo.findItemCategoryById(itemId, userId);
+};
