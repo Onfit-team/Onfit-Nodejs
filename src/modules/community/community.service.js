@@ -185,3 +185,42 @@ export const checkIfTodayOutfitCanBeShared = async (userId) => {
   // todayOutfit이 존재하고, isPublished가 false일 때만 true를 반환
   return !!todayOutfit && !todayOutfit.isPublished;
 };
+
+// 특정 아웃핏의 태그 조회 (mood/purpose 구분)
+export const getOutfitTags = async (outfitId) => {
+  // 아웃핏이 존재하고 공개된 상태인지 확인
+  const outfit = await prisma.outfit.findFirst({
+    where: {
+      id: outfitId,
+      isPublished: true
+    },
+    include: {
+      outfitTags: {
+        include: {
+          tag: {
+            select: {
+              id: true,
+              name: true,
+              type: true
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!outfit) {
+    throw new Error('해당 아웃핏을 찾을 수 없거나 공개되지 않은 아웃핏입니다.');
+  }
+
+  // 태그들을 mood와 purpose로 분류
+  const tags = outfit.outfitTags.map(outfitTag => outfitTag.tag);
+  const moodTags = tags.filter(tag => tag.type === 'mood');
+  const purposeTags = tags.filter(tag => tag.type === 'purpose');
+
+  return {
+    outfitId: outfit.id,
+    moodTags,
+    purposeTags
+  };
+};
