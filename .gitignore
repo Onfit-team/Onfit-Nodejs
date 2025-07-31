@@ -5,3 +5,6 @@ node_modules
 /src/generated/prisma
 .idea/
 *.sql
+# Database setup files (local only)
+create_database.sql
+insert_seed_data.sql
