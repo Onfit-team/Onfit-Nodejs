@@ -74,3 +74,19 @@ export const findItemByItemId = async (itemId, userId) => {
     },
   });
 };
+
+export const findItemCategoryById = async (itemId, userId) => {
+  return await prisma.item.findFirst({
+    where: {
+      id: itemId,
+      userId,
+      isDeleted: false
+    },
+    select: {
+      category: true,
+      subcategory: true,
+      season: true,
+      color: true
+    }
+  });
+};
