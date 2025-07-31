@@ -46,3 +46,18 @@ export const saveItem = async (req, res, next) => {
     next(err);
   }
 };
+
+export const uploadImage = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) throw new CustomError("로그인이 필요합니다", "UNAUTHORIZED", 401);
+
+    const file = req.file;
+    if (!file?.buffer) throw new InvalidInputError("이미지 파일이 필요합니다.");
+
+    const result = await itemService.uploadImage(userId, file);
+    res.status(200).json(new OkSuccess(result, "이미지 업로드 완료"));
+  } catch (err) {
+    next(err);
+  }
+};
