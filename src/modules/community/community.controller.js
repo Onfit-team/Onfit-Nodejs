@@ -134,3 +134,43 @@ export const getOutfitDetailController = async (req, res, next) => {
   }
 };
 
+export const getCommunityOutfitsController = async (req, res, next) => {
+  try {
+    const order = req.query.order || 'latest';
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 20;
+
+    const validOrders = ['latest', 'popular'];
+    if (!validOrders.includes(order)) {
+      return res.status(400).json({
+        isSuccess: false,
+        message: 'order 파라미터는 latest 또는 popular여야 합니다.'
+      });
+    }
+
+    // 서비스에서 outfits 배열 가져오기
+    const outfits = await communityService.getCommunityOutfits(order, page, limit);
+
+    // 결과에서 최소 정보만 추려서 반환 (likeCount 집계 방법 다양성에 대응)
+    const minimalOutfits = outfits.map(outfit => ({
+      id: outfit.id,
+      nickname: outfit.user.nickname,
+      mainImage: outfit.mainImage,
+      likeCount:
+        typeof outfit.likeCount === "number" ? outfit.likeCount :
+        (outfit._count?.outfitLikes ?? (Array.isArray(outfit.outfitLikes) ? outfit.outfitLikes.length : 0))
+    }));
+
+    return res.status(200).json({
+      isSuccess: true,
+      code: 'COMMON200',
+      message: '커뮤니티 아웃핏 목록 조회 성공',
+      result: {
+        outfits: minimalOutfits,
+        // pagination 정보가 필요하면 result.pagination 등 추가
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
