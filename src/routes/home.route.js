@@ -1,5 +1,5 @@
 import express from 'express';
-import { getCurrentDateController, getSimilarWeatherOutfitsController, getRecentOutfitsController } from '../modules/home/home.controller.js';
+import { getCurrentDateController, getSimilarWeatherOutfitsController, getRecentOutfitsController, getHomeRecommendItemsController } from '../modules/home/home.controller.js';
 import { getCurrentWeather, getTomorrowWeather } from '../modules/weather/weather.controller.js';
 import { authenticateJWT } from '../middlewares/auth.middleware.js';
 
@@ -11,5 +11,5 @@ router.get('/weather/current', authenticateJWT, getCurrentWeather);
 router.get('/weather/tomorrow', authenticateJWT, getTomorrowWeather);
 router.get('/home/similar-weather', authenticateJWT, getSimilarWeatherOutfitsController);
 router.get('/outfits/recent', authenticateJWT, getRecentOutfitsController); 
-
+router.get('/home/recommend-items', authenticateJWT, getHomeRecommendItemsController);
 export default router;
