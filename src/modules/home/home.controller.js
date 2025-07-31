@@ -36,13 +36,23 @@ export const getRecentOutfitsController = async (req, res, next) => {
   }
 };
 
-// GET /home/recommend-items
 export const getHomeRecommendItemsController = async (req, res, next) => {
   try {
     const userId = req.user.userId;
-    const result = await getHomeRecommendItems(userId); // 파라미터 없이!
+    const result = await getHomeRecommendItems(userId);
     res.status(200).json(new OkSuccess(result, "오늘 평균 기온 기준 추천 아이템 3개 반환 성공"));
   } catch (err) {
+    if (err.errorCode === 'I404') {
+      return res.status(404).json({
+        resultType: 'FAIL',
+        error: {
+          errorCode: err.errorCode,
+          reason: err.message,
+          data: null
+        },
+        success: null
+      });
+    }
     next(err);
   }
 };
