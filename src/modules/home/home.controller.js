@@ -1,4 +1,4 @@
-import { getCurrentDate, getHomeRecentOutfits, getHomeSimilarOutfits} from './home.service.js';
+import { getCurrentDate, getHomeRecentOutfits, getHomeSimilarOutfits, getHomeRecommendItems} from './home.service.js';
 import { OkSuccess } from '../../utils/success.js';
 import { InvalidInputError } from '../../utils/error.js';
 
@@ -32,6 +32,27 @@ export const getRecentOutfitsController = async (req, res, next) => {
     const result = await getHomeRecentOutfits(userId);
     res.status(200).json(new OkSuccess(result, '지난 7일간 코디 조회 성공'));
   } catch (err) {
+    next(err);
+  }
+};
+
+export const getHomeRecommendItemsController = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const result = await getHomeRecommendItems(userId);
+    res.status(200).json(new OkSuccess(result, "오늘 평균 기온 기준 추천 아이템 3개 반환 성공"));
+  } catch (err) {
+    if (err.errorCode === 'I404') {
+      return res.status(404).json({
+        resultType: 'FAIL',
+        error: {
+          errorCode: err.errorCode,
+          reason: err.message,
+          data: null
+        },
+        success: null
+      });
+    }
     next(err);
   }
 };
