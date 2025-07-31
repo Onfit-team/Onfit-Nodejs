@@ -144,3 +144,20 @@ export const saveItem = async (userId, refinedId) => {
 
   return { id: item.id, image_url: url };
 };
+
+// 4. 간단한 이미지 업로드 (카메라/갤러리용)
+export const uploadImage = async (userId, file) => {
+  if (!file || !file.buffer) throw new InvalidInputError("이미지 파일이 필요합니다.");
+
+  // 이미지 리사이즈 및 최적화
+  const optimizedBuffer = await sharp(file.buffer)
+    .resize(1024, 1024, { fit: "inside", withoutEnlargement: true })
+    .jpeg({ quality: 85 })
+    .toBuffer();
+
+  // S3에 업로드
+  const key = `uploads/${userId}/${uuidv4()}.jpg`;
+  const url = await uploadToS3(optimizedBuffer, key);
+
+  return { image_url: url };
+};
