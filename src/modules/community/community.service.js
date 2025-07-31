@@ -348,3 +348,33 @@ export const getCommunityOutfits = async (order = 'latest', page = 1, limit = 20
     },
   });
 };
+
+export const getYesterdayTopOutfits = async () => {
+  const now = new Date();                  // 현재 시각
+  const yesterday = new Date(now);        // 오늘 복사
+  yesterday.setDate(now.getDate() - 1);   // 어제 날짜로 변경
+  yesterday.setHours(0, 0, 0, 0);         // 어제 00:00:00
+
+  const nextDay = new Date(yesterday);
+  nextDay.setDate(yesterday.getDate() + 1); // 어제 + 1일 = 오늘 00:00:00
+
+  return await prisma.outfit.findMany({
+    where: {
+      isPublished: true,
+      date: {
+        gte: yesterday,
+        lt: nextDay
+      }
+    },
+    orderBy: [
+      { outfitLikes: { _count: 'desc' } },
+      { id: 'desc' }
+    ],
+    take: 3,
+    include: {
+      user: { select: { nickname: true } },
+      _count: { select: { outfitLikes: true } }
+    }
+  });
+};
+
