@@ -7,7 +7,8 @@ import {
     deletePublishedOutfitController,
     checkTodayOutfitShareabilityController,
     getOutfitTagsController,
-    getOutfitDetailController
+    getOutfitDetailController,
+    getCommunityOutfitsController
 } from '../modules/community/community.controller.js';
 import { authenticateJWT } from '../middlewares/auth.middleware.js';
 
@@ -34,5 +35,8 @@ router.get('/outfits/:outfitId', authenticateJWT, getOutfitDetailController);
 
 // DELETE /community/outfits/:outfitId
 router.delete('/outfits/:outfitId', authenticateJWT, deletePublishedOutfitController);
+
+// 커뮤니티에 공개된 아웃핏 목록 조회 (최신순/인기순)
+router.get('/outfits', authenticateJWT, getCommunityOutfitsController);
 
 export default router;
