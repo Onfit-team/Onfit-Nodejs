@@ -4,7 +4,8 @@ import {
     getPublishedOutfitsByOutfitTagsController,
     getTodayOutfitStatusController,
     publishTodayOutfitController,
-    deletePublishedOutfitController
+    deletePublishedOutfitController,
+    checkTodayOutfitShareabilityController
 } from '../modules/community/community.controller.js';
 import { authenticateJWT } from '../middlewares/auth.middleware.js';
 
@@ -22,5 +23,8 @@ router.patch('/publish-today-outfit', authenticateJWT, publishTodayOutfitControl
 
 // DELETE /community/outfits/:outfitId
 router.delete('/outfits/:outfitId', authenticateJWT, deletePublishedOutfitController);
+
+//오늘 아웃핏 등록 여부 true, false 반환 -> 공유 버튼 활성화
+router.get('/outfits/today/check', authenticateJWT, checkTodayOutfitShareabilityController);
 
 export default router;
