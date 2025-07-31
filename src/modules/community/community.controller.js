@@ -174,3 +174,26 @@ export const getCommunityOutfitsController = async (req, res, next) => {
     next(err);
   }
 };
+
+
+export const getYesterdayTopOutfitsController = async (req, res, next) => {
+  try {
+    const outfits = await communityService.getYesterdayTopOutfits();
+    const result = outfits.map((outfit, idx) => ({
+      id: outfit.id,
+      nickname: outfit.user.nickname,
+      mainImage: outfit.mainImage,
+      likeCount: outfit._count?.outfitLikes || 0,
+      rank: idx + 1
+    }));
+
+    return res.status(200).json({
+      isSuccess: true,
+      code: 'COMMON200',
+      message: '어제 인기 OUTFIT TOP3 조회 성공',
+      result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
