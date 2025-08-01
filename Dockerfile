@@ -20,6 +20,7 @@ RUN npm rebuild sharp
 
 # Prisma 관련
 COPY prisma ./prisma
+COPY .env .
 RUN npx prisma generate
 
 # Stage 2: 실제 실행 이미지
@@ -41,13 +42,11 @@ RUN pip install --break-system-packages ultralytics
 COPY --from=builder /build/node_modules ./node_modules
 COPY --from=builder /build/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /build/node_modules/@prisma ./node_modules/@prisma
+
+# .env + Prisma + 전체 소스 코드 복사
+COPY --from=builder /build/.env .env
 COPY --from=builder /build/prisma ./prisma
-
-# 전체 소스 코드 복사
 COPY . .
-
-# 실행 시점에 .env를 따로 mount 또는 배포 서버에서 설정
-# 예: docker run --env-file=.env ...
 
 # 서버 실행
 CMD ["npm", "start"]

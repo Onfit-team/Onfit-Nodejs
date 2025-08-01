@@ -1,16 +1,16 @@
-version: "3.8"
-
 services:
   nodejs:
-    image: munwalk/onfit-nodejs:latest  # DockerHub에서 pull
+    image: munwalk/onfit-nodejs:latest  # GitHub Actions에서 빌드됨
     ports:
       - "3000:3000"
     depends_on:
       - mysql
       - redis
+    volumes:
+      - .:/app
+      - /app/node_modules  # node_modules 덮어쓰기 방지
     environment:
-      - NODE_ENV=production
-    # build, volumes 제거 (build 안 하고, 로컬 파일 덮지 않음)
+      - NODE_ENV=development
 
   mysql:
     image: mysql:8.0
