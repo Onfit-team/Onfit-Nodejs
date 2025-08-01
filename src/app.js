@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 const result = dotenv.config();
 
+import cors from 'cors';
 import express from 'express';
 import passport from './modules/user/kakao.strategy.js';
 import userRoutes from './routes/user.route.js';
@@ -14,7 +15,8 @@ import modelRouter from './routes/model.route.js';
 import locationRouter from "./routes/location.route.js";
 import communityRouter from './routes/community.route.js';
 
-const app = express();
+const app = express(); 
+app.use(cors());
 app.use(express.json());
 app.use(passport.initialize());
 
