@@ -1,13 +1,13 @@
-name: Auto Deploy to EC2
+name: Auto Deploy to EC2 with Docker Compose
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main ]  # main 브랜치 푸시 시 실행
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -18,40 +18,31 @@ jobs:
         HOST: ${{ secrets.EC2_HOST }}
         USER: ${{ secrets.EC2_USER }}
       run: |
-        # SSH 키 파일 생성 및 권한 설정
+        # 1. SSH 키 파일 생성
         echo "$PRIVATE_KEY" > private_key.pem
         chmod 600 private_key.pem
-        
-        # SSH 연결 테스트
-        echo "Testing SSH connection..."
-        ssh -v -o StrictHostKeyChecking=no -i private_key.pem ${USER}@${HOST} 'echo "✅ SSH connection successful"'
-        
-        # 배포 실행
-        echo "Starting deployment..."
-        ssh -o StrictHostKeyChecking=no -i private_key.pem ${USER}@${HOST} '
-          echo "📁 Moving to project directory..."
+
+        # 2. EC2 접속 및 Docker Compose 배포
+        ssh -o StrictHostKeyChecking=no -i private_key.pem ${USER}@${HOST} << 'EOF'
+          echo "✅ SSH 접속 성공"
           cd ~/Onfit-Nodejs || exit 1
-          
-          echo "🔄 Pulling latest changes..."
+
+          echo "🔄 Git 최신 코드 pull"
+          git reset --hard
           git pull origin main
-          
-          echo "📦 Installing dependencies..."
-          npm install
-          
-          echo "🔧 Generating Prisma client..."
-          npx prisma generate
-          
-          echo "🔄 Restarting PM2 process..."
-          pm2 restart onfit-backend || pm2 start src/app.js --name onfit-backend --env production
-          
-          echo "✅ Checking PM2 status..."
-          pm2 status
-          
-          echo "🧪 Testing API..."
-          curl -f http://localhost:3000/tags/options || echo "API test failed"
-          
-          echo "🚀 Deployment completed!"
-        '
-        
-        # 클린업
+
+          echo "📦 DockerHub 이미지 pull"
+          docker-compose pull
+
+          echo "🧹 기존 컨테이너 종료"
+          docker-compose down
+
+          echo "🚀 최신 이미지로 실행"
+          docker-compose up -d
+
+          echo "📋 컨테이너 상태"
+          docker ps
+        EOF
+
+        # 3. SSH 키 삭제
         rm -f private_key.pem
