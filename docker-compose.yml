@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  nodejs:
+    image: munwalk/onfit-nodejs:latest  # DockerHub에서 pull
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql
+      - redis
+    environment:
+      - NODE_ENV=production
+    # build, volumes 제거 (build 안 하고, 로컬 파일 덮지 않음)
+
+  mysql:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_DATABASE: onfit
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  redis:
+    image: redis:7.0
+    ports:
+      - "6379:6379"
+
+  rmbg-api:
+    build:
+      context: ./src/modules/item/rmbg_api
+    ports:
+      - "7860:7860"
+
+volumes:
+  mysql-data:
