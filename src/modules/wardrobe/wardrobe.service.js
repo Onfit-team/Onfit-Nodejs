@@ -45,9 +45,27 @@ export const createItem = async (userId, data) => {
 };
 
 export const getAllWardrobeItems = async (userId) => {
-  return await prisma.item.findMany({
+  // 1. 카테고리별 통계 조회 (등록 수 많은 순)
+  const categoryStats = await prisma.item.groupBy({
+    by: ['category'],
     where: {
-      userId: userId,
+      userId,
+      isDeleted: false,
+    },
+    _count: {
+      category: true,
+    },
+    orderBy: {
+      _count: {
+        category: 'desc',
+      },
+    },
+  });
+
+  // 2. 전체 아이템 조회
+  const items = await prisma.item.findMany({
+    where: {
+      userId,
       isDeleted: false,
     },
     select: {
@@ -58,6 +76,29 @@ export const getAllWardrobeItems = async (userId) => {
       id: 'desc',
     },
   });
+
+  // 3. 카테고리 이름 매핑
+  const categoryMap = {
+    1: '상의', 2: '하의', 3: '원피스', 
+    4: '아우터', 5: '신발', 6: '액세서리'
+  };
+
+  // 4. 카테고리 통계 구성
+  const categories = categoryStats.map(stat => ({
+    category: stat.category,
+    name: categoryMap[stat.category],
+    count: stat._count.category,
+  }));
+
+  // 5. 전체 개수 계산
+  const totalCount = items.length;
+
+  return {
+    totalCount,
+    categories,
+    items,
+    appliedFilter: null // 필터 미적용 상태
+  };
 };
 
 export const getWardrobeItemDetail = async (userId, itemId) => {
@@ -69,35 +110,78 @@ export const getWardrobeItemDetail = async (userId, itemId) => {
       userId,
       isDeleted: false,
     },
-    select: {
-      id: true,
-      category: true,
-      subcategory: true,
-      brand: true,
-      color: true,
-      size: true,
-      season: true,
-      purchaseDate: true,
-      image: true,
-    },
+    include: {
+      itemTags: {         // 태그 정보 추가
+        include: {
+          tag: {
+            select: {
+              id: true,
+              name: true,
+              type: true
+            }
+          }
+        }
+      }
+    }
   });
 
   if (!item) {
     throw new CustomError('해당 아이템을 찾을 수 없습니다.', 404, 'NOT_FOUND');
   }
-  return item;
+
+  // 태그를 타입별로 분류
+  const tags = item.itemTags.map(itemTag => itemTag.tag);
+  const moodTags = tags.filter(tag => tag.type === 'mood');
+  const purposeTags = tags.filter(tag => tag.type === 'purpose');
+
+  // 반환 데이터 구조화
+  return {
+    id: item.id,
+    category: item.category,
+    subcategory: item.subcategory,
+    brand: item.brand,
+    color: item.color,
+    size: item.size,
+    season: item.season,
+    purchaseDate: item.purchaseDate,
+    image: item.image,
+    price: item.price,
+    purchaseSite: item.purchaseSite,
+    tags: {
+      moodTags,
+      purposeTags
+    }
+  };
 };
 
 export const getWardrobeItemsByCategory = async (userId, category, subcategory, itemId) => {
+  // 1. 전체 카테고리 통계 (항상 표시)
+  const categoryStats = await prisma.item.groupBy({
+    by: ['category'],
+    where: {
+      userId,
+      isDeleted: false,
+    },
+    _count: {
+      category: true,
+    },
+    orderBy: {
+      _count: {
+        category: 'desc',
+      },
+    },
+  });
+
+  // 2. 필터된 아이템 조회
   const where = {
     userId,
     isDeleted: false,
     ...(category !== undefined && category !== null && { category }),
     ...(subcategory !== undefined && subcategory !== null && { subcategory }),
-    ...(itemId !== undefined && itemId !== null && { id: itemId }), // ✅ itemId 있을 때만
+    ...(itemId !== undefined && itemId !== null && { id: itemId }),
   };
 
-  return await prisma.item.findMany({
+  const items = await prisma.item.findMany({
     where,
     select: {
       id: true,
@@ -107,6 +191,91 @@ export const getWardrobeItemsByCategory = async (userId, category, subcategory, 
       id: 'desc',
     },
   });
+
+  // 3. 카테고리 이름 매핑
+  const categoryMap = {
+    1: '상의', 2: '하의', 3: '원피스', 
+    4: '아우터', 5: '신발', 6: '액세서리'
+  };
+
+  const subcategoryMap = {
+    1: { // 상의
+      1: '반팔티셔츠', 2: '긴팔티셔츠', 3: '맨투맨/후드', 4: '셔츠/블라우스',
+      5: '니트/스웨터', 6: '조끼/베스트', 7: '민소매', 8: '기타'
+    },
+    2: { // 하의
+      1: '반바지', 2: '긴바지', 3: '청바지', 4: '슬랙스',
+      5: '레깅스', 6: '스커트', 7: '기타'
+    },
+    3: { // 원피스
+      1: '미니원피스', 2: '미디원피스', 3: '롱원피스', 4: '기타'
+    },
+    4: { // 아우터
+      1: '카디건', 2: '코트', 3: '자켓', 4: '점퍼/짚업',
+      5: '패딩', 6: '기타'
+    },
+    5: { // 신발
+      1: '운동화', 2: '부츠', 3: '샌들', 4: '구두',
+      5: '슬리퍼', 6: '기타'
+    },
+    6: { // 액세서리
+      1: '모자', 2: '스카프', 3: '벨트', 4: '시계',
+      5: '액세서리', 6: '가방', 7: '기타'
+    }
+  };
+
+  // 4. 카테고리 통계 구성
+  const categories = categoryStats.map(stat => ({
+    category: stat.category,
+    name: categoryMap[stat.category],
+    count: stat._count.category,
+  }));
+
+  // 5. 하위카테고리 목록 구성 (상위카테고리 선택 시)
+  let subcategories = [];
+  if (category && !subcategory) {
+    // 해당 카테고리의 하위카테고리 조회
+    const subcategoryStats = await prisma.item.groupBy({
+      by: ['subcategory'],
+      where: {
+        userId,
+        isDeleted: false,
+        category: category,
+      },
+      _count: {
+        subcategory: true,
+      },
+      orderBy: {
+        subcategory: 'asc',
+      },
+    });
+
+    subcategories = subcategoryStats.map(stat => ({
+      subcategory: stat.subcategory,
+      name: subcategoryMap[category]?.[stat.subcategory] || '기타',
+    }));
+  }
+
+  // 6. 필터 정보 구성
+  const appliedFilter = {
+    category: category || null,
+    categoryName: category ? categoryMap[category] : null,
+    subcategory: subcategory || null,
+    subcategoryName: (category && subcategory) ? subcategoryMap[category]?.[subcategory] : null,
+  };
+
+  // 7. 전체 개수 계산
+  const totalCount = await prisma.item.count({
+    where: { userId, isDeleted: false }
+  });
+
+  return {
+    totalCount,
+    categories,
+    subcategories, // 상위카테고리 선택 시에만 데이터 포함
+    items,
+    appliedFilter
+  };
 };
 
 export const getItemOutfitHistory = async (userId, itemId) => {
