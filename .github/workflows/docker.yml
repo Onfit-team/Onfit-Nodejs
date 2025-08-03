@@ -2,7 +2,7 @@ name: Docker Publish
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main ]  # main 브랜치에 push 시 빌드
 
 jobs:
   build-and-push:
@@ -11,12 +11,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
-      - name: Create .env.production from secrets
-        run: |
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env.production
-          echo "REDIS_URL=${{ secrets.REDIS_URL }}" >> .env.production
-          echo "NODE_ENV=production" >> .env.production
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -27,7 +21,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push image
+      - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .

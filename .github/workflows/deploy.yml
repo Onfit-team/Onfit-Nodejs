@@ -2,60 +2,47 @@ name: Auto Deploy to EC2 with Docker Compose
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main ]  # main 브랜치 푸시 시 실행
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Create .env.production from secrets
-        run: |
-          echo "NODE_ENV=production" >> .env.production
-          echo "PORT=3000" >> .env.production
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env.production
-          echo "REDIS_URL=${{ secrets.REDIS_URL }}" >> .env.production
-          echo "OPENWEATHER_API_KEY=${{ secrets.OPENWEATHER_API_KEY }}" >> .env.production
-          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env.production
-          echo "OPENAI_API_KEY1=${{ secrets.OPENAI_API_KEY1 }}" >> .env.production
-          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env.production
-          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env.production
-          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env.production
-          echo "AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }}" >> .env.production
-          echo "KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}" >> .env.production
-          echo "KAKAO_CALLBACK_URL=${{ secrets.KAKAO_CALLBACK_URL }}" >> .env.production
-          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env.production
-          echo "JWT_EXPIRES_IN=7d" >> .env.production
-          echo "HF_API_TOKEN=${{ secrets.HF_API_TOKEN }}" >> .env.production
+    - name: Deploy to EC2
+      env:
+        PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+        HOST: ${{ secrets.EC2_HOST }}
+        USER: ${{ secrets.EC2_USER }}
+      run: |
+        # 1. SSH 키 파일 생성
+        echo "$PRIVATE_KEY" > private_key.pem
+        chmod 600 private_key.pem
 
-      - name: Deploy to EC2
-        env:
-          PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
-          HOST: ${{ secrets.EC2_HOST }}
-          USER: ${{ secrets.EC2_USER }}
-        run: |
-          echo "$PRIVATE_KEY" > private_key.pem
-          chmod 600 private_key.pem
+        # 2. EC2 접속 및 Docker Compose 배포
+        ssh -o StrictHostKeyChecking=no -i private_key.pem ${USER}@${HOST} << 'EOF'
+          echo "✅ SSH 접속 성공"
+          cd ~/Onfit-Nodejs || exit 1
 
-          ssh -o StrictHostKeyChecking=no -i private_key.pem ${USER}@${HOST} << 'EOF'
-            cd ~/Onfit-Nodejs || exit 1
+          echo "🔄 Git 최신 코드 pull"
+          git reset --hard
+          git pull origin main
 
-            echo "📦 최신 코드 가져오기"
-            git reset --hard
-            git pull origin main
+          echo "📦 DockerHub 이미지 pull"
+          docker-compose pull
 
-            echo "📋 .env.production 복사"
-            cp .env.production .env.production  # 실제로는 scp 또는 빌드 시 복사 필요
+          echo "🧹 기존 컨테이너 종료"
+          docker-compose down
 
-            echo "🛠 Docker Compose 재시작"
-            docker-compose down
-            docker-compose pull
-            docker-compose up -d --build
+          echo "🚀 최신 이미지로 실행"
+          docker-compose up -d
 
-            docker ps
-          EOF
+          echo "📋 컨테이너 상태"
+          docker ps
+        EOF
 
-          rm -f private_key.pem
+        # 3. SSH 키 삭제
+        rm -f private_key.pem
