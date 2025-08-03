@@ -54,12 +54,5 @@ COPY --from=builder /build/.env .env
 COPY --from=builder /build/prisma ./prisma
 COPY . .
 
-EXPOSE 3000
-
-# Health check 추가
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:3000/health || exit 1
-
-
 # 서버 실행
 CMD ["npm", "start"]

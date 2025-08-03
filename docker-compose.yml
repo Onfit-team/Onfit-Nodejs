@@ -26,6 +26,7 @@ services:
     image: mysql:8.0
     container_name: onfit-mysql
     restart: unless-stopped
+
     environment:
       MYSQL_DATABASE: onfit
       MYSQL_USER: user
