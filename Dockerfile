@@ -8,10 +8,13 @@ RUN apt-get update && apt-get install -y \
     libvips-dev \
     libgl1-mesa-glx \
     python3 \
-    python3-pip
+    python3-pip \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # YOLO용 ultralytics 설치 (OpenCV 의존 있음)
-RUN pip install --break-system-packages ultralytics
+RUN pip install --break-system-packages ultralytics opencv-python-headless
+
 
 # Node 패키지 설치
 COPY package*.json ./
@@ -33,10 +36,13 @@ RUN apt-get update && apt-get install -y \
     libvips-dev \
     libgl1-mesa-glx \
     python3 \
-    python3-pip
+    python3-pip \
+     curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # ultralytics 설치 (YOLO)
-RUN pip install --break-system-packages ultralytics
+RUN pip install --break-system-packages ultralytics opencv-python-headless
+
 
 # node_modules + Prisma client 복사
 COPY --from=builder /build/node_modules ./node_modules
@@ -47,6 +53,13 @@ COPY --from=builder /build/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /build/.env .env
 COPY --from=builder /build/prisma ./prisma
 COPY . .
+
+EXPOSE 3000
+
+# Health check 추가
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
+
 
 # 서버 실행
 CMD ["npm", "start"]
