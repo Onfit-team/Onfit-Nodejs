@@ -1,13 +1,16 @@
 services:
   nodejs:
-    image: munwalk/onfit-nodejs:latest  # DockerHub에서 자동 pull
+    image: munwalk/onfit-nodejs:latest  # GitHub Actions에서 빌드됨
     ports:
       - "3000:3000"
     depends_on:
       - mysql
       - redis
-    env_file:
-      - .env.production  # 환경 변수는 여기에
+    volumes:
+      - .:/app
+      - /app/node_modules  # node_modules 덮어쓰기 방지
+    environment:
+      - NODE_ENV=development
 
   mysql:
     image: mysql:8.0
@@ -16,11 +19,11 @@ services:
       MYSQL_DATABASE: onfit
       MYSQL_USER: user
       MYSQL_PASSWORD: password
-      MYSQL_ROOT_PASSWORD: jang1823!
-    ports:
-      - "3306:3306"
+      MYSQL_ROOT_PASSWORD: root
     volumes:
       - mysql-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
 
   redis:
     image: redis:7.0
