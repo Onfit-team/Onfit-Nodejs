@@ -26,6 +26,7 @@ services:
     volumes:
       - ./uploads:/app/uploads
       - ./logs:/app/logs
+
     depends_on:
       - redis
     networks: [onfit-network]
