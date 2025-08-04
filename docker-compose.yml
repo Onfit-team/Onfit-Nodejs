@@ -1,20 +1,32 @@
+version: '3.8'
+
 services:
   nodejs:
-    image: munwalk/onfit-nodejs:latest  # GitHub Actions에서 빌드됨
+    build: .
+    container_name: onfit-backend
+    restart: unless-stopped
     ports:
       - "3000:3000"
     depends_on:
       - mysql
       - redis
     volumes:
-      - .:/app
-      - /app/node_modules  # node_modules 덮어쓰기 방지
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
+      - DATABASE_URL=mysql://user:password@mysql:3306/onfit
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
+    networks:
+      - onfit-network
 
   mysql:
     image: mysql:8.0
-    restart: always
+    container_name: onfit-mysql
+    restart: unless-stopped
+
     environment:
       MYSQL_DATABASE: onfit
       MYSQL_USER: user
@@ -24,17 +36,34 @@ services:
       - mysql-data:/var/lib/mysql
     ports:
       - "3306:3306"
+    networks:
+      - onfit-network
 
   redis:
-    image: redis:7.0
+    image: redis:7.0-alpine
+    container_name: onfit-redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - onfit-network
 
   rmbg-api:
     build:
       context: ./src/modules/item/rmbg_api
+    container_name: onfit-rmbg
+    restart: unless-stopped
     ports:
       - "7860:7860"
+    networks:
+      - onfit-network
 
 volumes:
   mysql-data:
+  redis-data:
+
+networks:
+  onfit-network:
+    driver: bridge
