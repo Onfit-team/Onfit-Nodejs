@@ -9,6 +9,18 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Free Disk Space
+      uses: jlumbroso/free-disk-space@main
+      with:
+        # 불필요한 도구들 제거
+        tool-cache: false
+        android: true
+        dotnet: true
+        haskell: true
+        large-packages: true
+        docker-images: true
+        swap-storage: true
+
     - name: Checkout code
       uses: actions/checkout@v4
 
@@ -30,3 +42,5 @@ jobs:
         platforms: linux/amd64
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        # 빌드 후 즉시 정리
+        rm: true

@@ -2,99 +2,48 @@ version: '3.8'
 
 services:
   nodejs:
-    image: munwalk/onfit-nodejs:latest  # DockerHub에서 pull
-    container_name: onfit-backend
-    restart: unless-stopped
+    build: .
+    container_name: onfit-backend-local
     ports:
       - "3000:3000"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     environment:
-      # 환경변수를 직접 설정 (SSH 서버의 .env에서 값 참조)
-      - NODE_ENV=production
-      - PORT=3000
-      - HOST=0.0.0.0
-      - DATABASE_URL=mysql://admin:Onfit2025~!@onfit-db.cvo8wukambjk.ap-northeast-2.rds.amazonaws.com/onfit
-      - JWT_SECRET=521294f5f7ed827ced091f4b1a75d60fe96c4f823fc41b578550e05235fc7516
-      - JWT_EXPIRES_IN=7d
-      - OPENWEATHER_API_KEY=046a5c29f998733692e853156b787b61
-      - OPENAI_API_KEY=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
-      - AWS_REGION=ap-northeast-2
-      - AWS_ACCESS_KEY_ID=AKIAS252WL5KQXJ44D22
-      - AWS_SECRET_ACCESS_KEY=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
-      - AWS_BUCKET_NAME=onfit-ai-uploads-2025
-      - REDIS_URL=redis://redis:6379
-      - KAKAO_CLIENT_ID=155cb05421b06c47a5422e197e81450c
-      - KAKAO_CALLBACK_URL=http://15.164.35.198:3000/user/auth/kakao/callback
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_started
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}  # 컨테이너 이름으로
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-ap-northeast-2}
+      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
+      - KAKAO_CLIENT_ID=${KAKAO_CLIENT_ID}
+      - KAKAO_CALLBACK_URL=${KAKAO_CALLBACK_URL}
     volumes:
       - ./uploads:/app/uploads
       - ./logs:/app/logs
-    networks:
-      - onfit-network
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '0.5'
-
-  mysql:
-    image: mysql:8.0
-    container_name: onfit-mysql
+    depends_on:
+      - redis
+    networks: [onfit-network]
     restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: onfit
-      MYSQL_USER: user  
-      MYSQL_PASSWORD: password
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_CHARACTER_SET_SERVER: utf8mb4
-      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
-    volumes:
-      - mysql-data:/var/lib/mysql
-    ports:
-      - "3306:3306"
-    networks:
-      - onfit-network
-    command: >
-      --default-authentication-plugin=mysql_native_password
-      --character-set-server=utf8mb4
-      --collation-server=utf8mb4_unicode_ci
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "user", "-ppassword"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
 
   redis:
     image: redis:7.0-alpine
-    container_name: onfit-redis
-    restart: unless-stopped
+    container_name: onfit-redis-local
     ports:
-      - "6379:6379"
+      - "${REDIS_HOST_PORT:-6380}:6379"
+    command: redis-server --appendonly yes
     volumes:
       - redis-data:/data
-    networks:
-      - onfit-network
-    command: redis-server --appendonly yes
-
-  rmbg-api:
-    build:
-      context: ./src/modules/item/rmbg_api
-    container_name: onfit-rmbg
+    networks: [onfit-network]
     restart: unless-stopped
-    ports:
-      - "7860:7860"
-    networks:
-      - onfit-network
 
 volumes:
-  mysql-data:
-    driver: local
   redis-data:
-    driver: local
 
 networks:
   onfit-network:
