@@ -24,6 +24,7 @@ RUN pip install --no-cache-dir torch torchvision --index-url https://download.py
 RUN pip install --no-cache-dir ultralytics opencv-python-headless
 
 # Node 패키지 설치
+
 COPY package*.json ./
 RUN npm ci --only=production
 RUN npm rebuild sharp
