@@ -1,51 +1,22 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  nodejs:
+  backend:
     build: .
-    container_name: onfit-backend-local
+    container_name: onfit-backend
     ports:
       - "3000:3000"
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
-    environment:
-      - NODE_ENV=${NODE_ENV:-development}
-      - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379}  # 컨테이너 이름으로
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
-      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_REGION=${AWS_REGION:-ap-northeast-2}
-      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
-      - KAKAO_CLIENT_ID=${KAKAO_CLIENT_ID}
-      - KAKAO_CALLBACK_URL=${KAKAO_CALLBACK_URL}
-    volumes:
-      - ./uploads:/app/uploads
-      - ./logs:/app/logs
-
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - redis
-    networks: [onfit-network]
     restart: unless-stopped
 
   redis:
-    image: redis:7.0-alpine
-    container_name: onfit-redis-local
+    image: redis:7-alpine
+    container_name: onfit-redis
     ports:
-      - "${REDIS_HOST_PORT:-6380}:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - redis-data:/data
-    networks: [onfit-network]
+      - "6379:6379"
     restart: unless-stopped
-
-volumes:
-  redis-data:
-
-networks:
-  onfit-network:
-    driver: bridge
