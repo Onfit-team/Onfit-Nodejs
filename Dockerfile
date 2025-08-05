@@ -13,7 +13,6 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir ultralytics opencv-python-headless
 
-# package.json 복사 및 의존성 설치
 COPY package*.json ./
 RUN npm ci --only=production
 RUN npm install sharp --platform=linux --arch=x64
