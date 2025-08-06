@@ -1,48 +1,50 @@
-name: Auto Deploy to EC2 with Docker Compose
+name: Auto Deploy to EC2 with Docker
 
 on:
   push:
-    branches: [ main ]  # main 브랜치 푸시 시 실행
+    branches: [ main ]
+  workflow_run:
+    workflows: ["Build and Push Docker Image"]
+    types: [completed]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
     - name: Deploy to EC2
       env:
         PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
         HOST: ${{ secrets.EC2_HOST }}
         USER: ${{ secrets.EC2_USER }}
       run: |
-        # 1. SSH 키 파일 생성
         echo "$PRIVATE_KEY" > private_key.pem
         chmod 600 private_key.pem
 
-        # 2. EC2 접속 및 Docker Compose 배포
         ssh -o StrictHostKeyChecking=no -i private_key.pem ${USER}@${HOST} << 'EOF'
           echo "✅ SSH 접속 성공"
           cd ~/Onfit-Nodejs || exit 1
+
+          echo "🛑 PM2 프로세스 정리"
+          pm2 stop all || true
+          pm2 delete all || true
 
           echo "🔄 Git 최신 코드 pull"
           git reset --hard
           git pull origin main
 
-          echo "📦 DockerHub 이미지 pull"
-          docker-compose pull
+          echo "📦 최신 Docker 이미지 pull"
+          docker pull kimyebeen125/onfit-nodejs:latest  
 
-          echo "🧹 기존 컨테이너 종료"
-          docker-compose down
+          echo "🧹 기존 컨테이너 정리"
+          docker-compose down || true
 
-          echo "🚀 최신 이미지로 실행"
+          echo "🚀 Docker Compose로 실행"
           docker-compose up -d
 
-          echo "📋 컨테이너 상태"
+          echo "📋 컨테이너 상태 확인"
           docker ps
         EOF
 
-        # 3. SSH 키 삭제
         rm -f private_key.pem
