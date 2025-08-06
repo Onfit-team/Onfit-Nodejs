@@ -37,6 +37,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
+        file: ./Dockerfile
         push: true
         tags: kimyebeen125/onfit-nodejs:latest
         platforms: linux/amd64
