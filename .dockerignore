@@ -1,10 +1,27 @@
+# Node.js 관련
 node_modules
-.git
-.gitignore
-README.md
+npm-debug.log
+yarn-error.log
+
+# Python 관련
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# IDE 관련
+.vscode
+.idea
+
+# OS 관련
+.DS_Store
+Thumbs.db
+
+# 로그
+debug.log
+
+# 환경파일
 .env
 .env.*
-*.log
-.DS_Store
-.idea
-.vscode
+!.env.production
