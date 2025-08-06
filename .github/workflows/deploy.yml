@@ -22,20 +22,28 @@ jobs:
         echo "$PRIVATE_KEY" > private_key.pem
         chmod 600 private_key.pem
 
-        ssh -o StrictHostKeyChecking=no -i private_key.pem ${USER}@${HOST} << 'EOF'
+        # SSH 연결 안정성 옵션 추가
+        ssh -o StrictHostKeyChecking=no \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=3 \
+            -o TCPKeepAlive=yes \
+            -o ConnectTimeout=10 \
+            -i private_key.pem ${USER}@${HOST} << 'EOF'
+          set -e
           echo "✅ SSH 접속 성공"
           cd ~/Onfit-Nodejs || exit 1
 
           echo "🛑 PM2 프로세스 정리"
           pm2 stop all || true
           pm2 delete all || true
+          pm2 kill || true
 
           echo "🔄 Git 최신 코드 pull"
           git reset --hard
           git pull origin main
 
           echo "📦 최신 Docker 이미지 pull"
-          docker pull kimyebeen125/onfit-nodejs:latest  
+          docker pull kimyebeen125/onfit-nodejs:latest
 
           echo "🧹 기존 컨테이너 정리"
           docker-compose down || true
@@ -44,7 +52,12 @@ jobs:
           docker-compose up -d
 
           echo "📋 컨테이너 상태 확인"
+          sleep 5
           docker ps
+
+          echo "🔍 애플리케이션 헬스체크"
+          sleep 10
+          curl -f http://localhost:3000 || echo "❌ 헬스체크 실패"
         EOF
 
         rm -f private_key.pem
