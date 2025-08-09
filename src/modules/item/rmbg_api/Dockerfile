@@ -1,14 +1,16 @@
-FROM pytorch/pytorch:2.1.0-cuda12.1-cudnn8-runtime
+FROM python:3.10-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
- && apt-get clean
+# PyTorch, torchvision 설치 (CPU 버전)
+RUN pip install --default-timeout=100 torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
+# requirements.txt 복사 후 의존성 설치
 COPY ./requirements.txt /app/
-RUN pip install --no-cache-dir --default-timeout=100 -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
+# 앱 코드 복사
 COPY ./app /app/app
 
+EXPOSE 7860
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]
