@@ -14,3 +14,9 @@ insert_seed_data.sql
 
 # RMBG weight
 src/modules/item/rmbg_api/app/model.pth
+# env
+.env
+.env.*
+*.env
+# RMBG weight
+src/modules/item/rmbg_api/app/model.pth
