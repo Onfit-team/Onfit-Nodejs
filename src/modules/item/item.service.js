@@ -15,6 +15,7 @@ import { runPython } from "../../utils/python.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// ✅ 감지 및 캐시
 export const detectAndCache = async (userId, file) => {
   if (!file?.buffer) throw new InvalidInputError("이미지 파일이 필요합니다.");
   const tempPath = path.join(os.tmpdir(), `input-${uuidv4()}.png`);
@@ -66,13 +67,13 @@ export const detectAndCache = async (userId, file) => {
   }
 };
 
+// ✅ 리파인
 export const refineItem = async (userId, cropId) => {
   const url = await redisClient.get(`onfit:crop:${userId}:${cropId}:url`);
   if (!url) throw new NotExistsError("크롭 이미지가 만료되었습니다. 다시 감지해주세요.");
 
   const response = await axios.get(url, { responseType: "arraybuffer" });
   const inputBuffer = Buffer.from(response.data);
-
   const tempPath = path.join(os.tmpdir(), `input-${uuidv4()}.png`);
 
   try {
@@ -81,15 +82,11 @@ export const refineItem = async (userId, cropId) => {
     const form = new FormData();
     form.append("file", fs.createReadStream(tempPath));
 
-    const dockerRes = await axios.post(
-      "http://rmbg-api:7860/remove_bg",
-      form,
-      {
-        headers: form.getHeaders(),
-        responseType: "arraybuffer",
-        timeout: 60000,
-      }
-    );
+    const dockerRes = await axios.post("http://rmbg-api:7860/remove_bg", form, {
+      headers: form.getHeaders(),
+      responseType: "arraybuffer",
+      timeout: 60000,
+    });
 
     const refinedId = uuidv4();
     const buffer = Buffer.from(dockerRes.data);
@@ -105,6 +102,7 @@ export const refineItem = async (userId, cropId) => {
   }
 };
 
+// ✅ 저장
 export const saveItem = async (userId, refinedId) => {
   const refinedUrl = await redisClient.get(`onfit:refined:${userId}:${refinedId}:url`);
   if (!refinedUrl) throw new NotExistsError("리파인 이미지가 만료되었습니다.");
@@ -125,11 +123,13 @@ export const saveItem = async (userId, refinedId) => {
   return { id: item.id, image_url: refinedUrl };
 };
 
+// ✅ 크롭 삭제
 export const deleteCropImage = async (userId, cropId) => {
-  const key = `crop:${userId}:${cropId}`;
-  const exists = await redisClient.get(key);
+  const urlKey   = `onfit:crop:${userId}:${cropId}:url`;
+  const labelKey = `onfit:crop:${userId}:${cropId}:label`;
+  const exists = await redisClient.get(urlKey);
   if (!exists) throw new NotExistsError("해당 크롭 이미지가 없습니다.");
-
-  await redisClient.del(key);
+  await redisClient.del(urlKey);
+  await redisClient.del(labelKey);
   return { crop_id: cropId };
 };
