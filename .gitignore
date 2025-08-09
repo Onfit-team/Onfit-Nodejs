@@ -1,65 +1,16 @@
-# =============================
-# ✅ Node.js 관련
-# =============================
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-logs/
-uploads/
-coverage/
-
-# =============================
-# ✅ 환경 변수 파일
-# =============================
+node_modules
+# Keep environment variables out of version control
+docker-compose.yml
 .env
-.env.*
-!.env.template
 
-# =============================
-# ✅ Docker
-# =============================
-*.pem
-docker-compose.override.yml
-docker-compose.debug.yml
 
-# =============================
-# ✅ OS / 에디터 별
-# =============================
-.DS_Store
-Thumbs.db
-.vscode/
+/src/generated/prisma
 .idea/
+*.sql
+# Database setup files (local only)
+create_database.sql
+insert_seed_data.sql
+.env
 
-# =============================
-# ✅ Python (rmbg_api 등)
-# =============================
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.so
-*.egg-info/
-.rmbg-model-cache/
-
-# =============================
-# ✅ Prisma (자동 생성된 바이너리)
-# =============================
-prisma/node_modules/
-node_modules/.prisma/
-
-# =============================
-# ✅ 테스트/빌드 산출물
-# =============================
-dist/
-build/
-*.log
-debug.log
-
-# =============================
-# ✅ 기타
-# =============================
-.env.local
-.env.backup
-*.zip
-*.tar.gz
+# RMBG weight
+src/modules/item/rmbg_api/app/model.pth
