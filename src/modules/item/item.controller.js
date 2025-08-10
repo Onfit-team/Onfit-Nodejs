@@ -7,6 +7,7 @@ export const detectItems = async (req, res, next) => {
     const userId = req.user?.userId;
     if (!userId) throw new UnauthorizedError("로그인이 필요합니다");
 
+    
     const file = req.file;
     if (!file?.buffer) throw new InvalidInputError("이미지 파일이 필요합니다.");
 
