@@ -1,7 +1,7 @@
 // src/modules/wardrobe/wardrobe.controller.js
 import * as wardrobeService from './wardrobe.service.js';
 import { OkSuccess, CreatedSuccess } from '../../utils/success.js';
-import { TooManyTagsError, NotExistsError} from '../../utils/error.js';
+import { TooManyTagsError, NotExistsError, CustomError} from '../../utils/error.js';
 import { WardrobeFilterDto } from './wardrobe.dto.js';
 
 export const getItemCategoryInfo = async (req, res, next) => {
@@ -138,20 +138,16 @@ export const getItemOutfitHistoryController = async (req, res, next) => {
     const userId = req.user.userId;
     const { itemId } = req.params;
     
-    // itemId 유효성 검사
-    const parsedItemId = parseInt(itemId, 10);
-    if (!itemId || isNaN(parsedItemId)) {
-      return res.status(400).json({ 
-        isSuccess: false, 
-        message: 'itemId가 올바르지 않습니다.' 
-      });
+    // itemId 기본 형식 검사 (서비스에서 더 자세한 유효성 검사 수행)
+    if (!itemId) {
+      throw new CustomError('itemId가 필요합니다.', 'MISSING_ITEM_ID', 400);
     }
 
-    const outfits = await wardrobeService.getItemOutfitHistory(userId, parsedItemId);
+    const outfits = await wardrobeService.getItemOutfitHistory(userId, itemId);
     
     // 결과가 없을 때 메시지 추가
     if (!outfits || outfits.length === 0) {
-      return res.status(200).json(new OkSuccess([], '해당 아이템이 포함된 아웃핏이 없습니다.'));
+      return res.status(200).json(new OkSuccess([], '해당 아이템이 포함된 코디 기록이 없습니다.'));
     }
 
     return res.status(200).json(new OkSuccess(outfits, '아이템이 포함된 코디 기록 조회 성공'));
@@ -213,13 +209,15 @@ export const getRecommendedCoordinatedItemsController = async (req, res, next) =
   try {
     const userId = req.user.userId;
     const { itemId } = req.params;
+    
+    // itemId 기본 형식 검사 (CustomError 사용으로 일관성 유지)
+    if (!itemId) {
+      throw new CustomError('itemId가 필요합니다.', 'MISSING_ITEM_ID', 400);
+    }
+    
     const parsedItemId = parseInt(itemId, 10);
-
-    if (!itemId || isNaN(parsedItemId)) {
-      return res.status(400).json({
-        isSuccess: false,
-        message: 'itemId가 올바르지 않습니다.'
-      });
+    if (isNaN(parsedItemId) || parsedItemId <= 0) {
+      throw new CustomError('유효하지 않은 itemId입니다.', 'INVALID_ITEM_ID', 400);
     }
 
     const recommendedItems = await wardrobeService.getRecommendedCoordinatedItems(userId, parsedItemId);
@@ -230,12 +228,6 @@ export const getRecommendedCoordinatedItemsController = async (req, res, next) =
 
     return res.status(200).json(new OkSuccess(recommendedItems, '코디 추천 아이템 조회 성공'));
   } catch (err) {
-    if (err.message === '해당 아이템을 찾을 수 없습니다.') {
-      return res.status(404).json({
-        isSuccess: false,
-        message: err.message
-      });
-    }
     next(err);
   }
 };
