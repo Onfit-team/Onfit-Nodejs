@@ -1,0 +1,22 @@
+node_modules
+# Keep environment variables out of version control
+docker-compose.yml
+.env
+
+
+/src/generated/prisma
+.idea/
+*.sql
+# Database setup files (local only)
+create_database.sql
+insert_seed_data.sql
+.env
+
+# RMBG weight
+src/modules/item/rmbg_api/app/model.pth
+# env
+.env
+.env.*
+*.env
+# RMBG weight
+src/modules/item/rmbg_api/app/model.pth
