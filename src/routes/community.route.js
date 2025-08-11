@@ -1,7 +1,6 @@
 import express from 'express';
 import {
     toggleOutfitLikeController,
-    getPublishedOutfitsByOutfitTagsController,
     getTodayOutfitStatusController,
     publishTodayOutfitController,
     deletePublishedOutfitController,
@@ -17,7 +16,6 @@ const router = express.Router();
 
 // 게시글 하트 누르기 / 취소
 router.post('/outfits/:outfitId/like', authenticateJWT, toggleOutfitLikeController);
-router.get('/outfits/filter/outfit-tags', authenticateJWT, getPublishedOutfitsByOutfitTagsController);
 
 // 오늘의 아웃핏 상태 조회
 router.get('/today-outfit-status', authenticateJWT, getTodayOutfitStatusController);
@@ -31,8 +29,7 @@ router.get('/outfits/today/check', authenticateJWT, checkTodayOutfitShareability
 // 특정 아웃핏의 태그 조회 (mood/purpose 구분) - 구체적인 경로를 먼저
 router.get('/outfits/:outfitId/tags', authenticateJWT, getOutfitTagsController);
 
-
-// 커뮤니티에 공개된 아웃핏 목록 조회 (최신순/인기순)
+// 커뮤니티에 공개된 아웃핏 목록 조회 (최신순/인기순 + 태그 필터링)
 router.get('/outfits', authenticateJWT, getCommunityOutfitsController);
 
 //top3outfit조회
