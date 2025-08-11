@@ -282,9 +282,31 @@ export const getItemOutfitHistory = async (userId, itemId) => {
   // itemId 유효성 검사
   const parsedItemId = Number(itemId);
   if (isNaN(parsedItemId)) {
-    throw new Error('유효하지 않은 itemId입니다.');
+    throw new CustomError('유효하지 않은 itemId입니다.', 'INVALID_ITEM_ID', 400);
   }
 
+  // 먼저 아이템이 존재하고 사용자가 소유하고 있는지 확인
+  const item = await prisma.item.findUnique({
+    where: { id: parsedItemId },
+    select: { id: true, userId: true, isDeleted: true }
+  });
+
+  // 아이템이 존재하지 않는 경우
+  if (!item) {
+    throw new CustomError('해당 아이템을 찾을 수 없습니다.', 'ITEM_NOT_FOUND', 404);
+  }
+
+  // 다른 사용자의 아이템인 경우
+  if (item.userId !== userId) {
+    throw new CustomError('다른 사용자의 아이템 코디 기록은 조회할 수 없습니다.', 'FORBIDDEN', 403);
+  }
+
+  // 삭제된 아이템인 경우
+  if (item.isDeleted) {
+    throw new CustomError('삭제된 아이템의 코디 기록은 조회할 수 없습니다.', 'ITEM_DELETED', 400);
+  }
+
+  // 해당 아이템이 포함된 코디 기록 조회
   return await prisma.outfit.findMany({
     where: {
       userId,
@@ -370,8 +392,19 @@ export const softDeleteItem = async (userId, itemId) => {
     where: { id: itemId },
   });
 
-  if (!item || item.isDeleted || item.userId !== userId) {
-    throw new CustomError(errorCode.NOT_FOUND, '삭제할 아이템이 없거나 권한이 없습니다.');
+  // 아이템이 존재하지 않는 경우
+  if (!item) {
+    throw new CustomError('해당 아이템을 찾을 수 없습니다.', 'NOT_FOUND', 404);
+  }
+
+  // 다른 사용자의 아이템인 경우
+  if (item.userId !== userId) {
+    throw new CustomError('다른 사용자의 아이템은 삭제할 수 없습니다.', 'FORBIDDEN', 403);
+  }
+
+  // 이미 삭제된 아이템인 경우
+  if (item.isDeleted) {
+    throw new CustomError('이미 삭제된 아이템입니다.', 'ALREADY_DELETED', 400);
   }
 
   await prisma.item.update({
@@ -532,103 +565,180 @@ const calculateColorScore = (baseColor, recommendColor) => {
 // 스타일 태그 매칭 점수 계산
 const calculateTagScore = (baseTags, recommendTags) => {
   if (!baseTags || baseTags.length === 0 || !recommendTags || recommendTags.length === 0) {
-    return 0;
+    return { score: 0, matchRate: 0 };
   }
   
   const baseTagIds = baseTags.map(tag => tag.tagId);
   const recommendTagIds = recommendTags.map(tag => tag.tagId);
   
+  // 공통 태그 개수 계산
+  const commonTags = baseTagIds.filter(tagId => recommendTagIds.includes(tagId));
+  const matchRate = baseTagIds.length > 0 ? (commonTags.length / baseTagIds.length) * 100 : 0;
+  
   // 기준 아이템의 모든 태그가 추천 아이템에 포함되어 있는지 확인 (100% 일치)
-  const allBaseTagsIncluded = baseTagIds.every(tagId => recommendTagIds.includes(tagId));
-  if (allBaseTagsIncluded) return 10;
+  if (matchRate === 100) {
+    return { score: 10, matchRate };
+  }
   
   // 1개 이상 부분 일치
-  const hasCommonTag = baseTagIds.some(tagId => recommendTagIds.includes(tagId));
-  if (hasCommonTag) return 5;
+  if (commonTags.length > 0) {
+    return { score: 5, matchRate };
+  }
   
-  return 0;
+  return { score: 0, matchRate: 0 };
 };
 
 // 옷장 아이템 추천
 export const getRecommendedCoordinatedItems = async (userId, itemId) => {
-  // 기준 아이템 조회
-  const baseItem = await prisma.item.findFirst({
-    where: {
-      id: itemId,
-      userId,
-      isDeleted: false
-    },
-    include: {
-      itemTags: {
-        include: {
-          tag: true
+  let baseItem;
+  
+  try {
+    // 먼저 아이템 존재 여부 확인 (소유권과 삭제 상태 포함)
+    const itemExists = await prisma.item.findUnique({
+      where: { id: itemId },
+      select: { id: true, userId: true, isDeleted: true }
+    });
+    
+    // 아이템이 존재하지 않는 경우
+    if (!itemExists) {
+      throw new CustomError('해당 아이템을 찾을 수 없습니다.', 'ITEM_NOT_FOUND', 404);
+    }
+    
+    // 다른 사용자의 아이템인 경우
+    if (itemExists.userId !== userId) {
+      throw new CustomError('다른 사용자의 아이템은 추천할 수 없습니다.', 'FORBIDDEN', 403);
+    }
+    
+    // 삭제된 아이템인 경우
+    if (itemExists.isDeleted) {
+      throw new CustomError('삭제된 아이템은 추천할 수 없습니다.', 'ITEM_DELETED', 400);
+    }
+
+    // 기준 아이템 상세 조회
+    baseItem = await prisma.item.findFirst({
+      where: {
+        id: itemId,
+        userId,
+        isDeleted: false
+      },
+      include: {
+        itemTags: {
+          include: {
+            tag: true
+          }
         }
       }
+    });
+    
+    if (!baseItem) {
+      throw new CustomError('아이템 조회 중 오류가 발생했습니다.', 'INTERNAL_ERROR', 500);
     }
-  });
-  
-  if (!baseItem) {
-    throw new Error('해당 아이템을 찾을 수 없습니다.');
+  } catch (error) {
+    // CustomError는 그대로 전파
+    if (error.errorCode) {
+      throw error;
+    }
+    // 데이터베이스 연결 오류 등 예상치 못한 오류
+    console.error('추천 아이템 조회 중 데이터베이스 오류:', error);
+    throw new CustomError('서버 오류가 발생했습니다.', 'DATABASE_ERROR', 500);
   }
   
   // 추천 가능한 카테고리 가져오기
   const recommendableCategories = getRecommendableCategories(baseItem.category);
   if (recommendableCategories.length === 0) {
-    return [];
+    return []; // 추천 불가능한 카테고리 (빈 배열 반환은 정상)
   }
   
   // 추천 후보 아이템들 조회 (기준 아이템 제외)
-  const candidateItems = await prisma.item.findMany({
-    where: {
-      userId,
-      isDeleted: false,
-      category: {
-        in: recommendableCategories
+  let candidateItems;
+  try {
+    candidateItems = await prisma.item.findMany({
+      where: {
+        userId,
+        isDeleted: false,
+        category: {
+          in: recommendableCategories
+        },
+        id: {
+          not: itemId // 기준 아이템 제외
+        }
       },
-      id: {
-        not: itemId // 기준 아이템 제외
-      }
-    },
-    include: {
-      itemTags: {
-        include: {
-          tag: true
+      include: {
+        itemTags: {
+          include: {
+            tag: true
+          }
         }
       }
-    }
-  });
+    });
+  } catch (error) {
+    console.error('추천 후보 아이템 조회 중 오류:', error);
+    throw new CustomError('추천 아이템 조회 중 오류가 발생했습니다.', 'DATABASE_ERROR', 500);
+  }
   
   // 각 후보 아이템의 점수 계산
-  const scoredItems = candidateItems.map(item => {
-    let totalScore = 0;
-    
-    // 계절 매칭 점수
-    const seasonScore = calculateSeasonScore(baseItem.season, item.season);
-    totalScore += seasonScore;
-    
-    // 색상 매칭 점수
-    const colorScore = calculateColorScore(baseItem.color, item.color);
-    totalScore += colorScore;
-    
-    // 스타일 태그 매칭 점수
-    const tagScore = calculateTagScore(baseItem.itemTags, item.itemTags);
-    totalScore += tagScore;
-    
-    return {
-      ...item,
-      matchingScore: totalScore,
-      scoreBreakdown: {
-        season: seasonScore,
-        color: colorScore,
-        tag: tagScore
-      }
-    };
-  });
+  let scoredItems;
+  try {
+    scoredItems = candidateItems.map(item => {
+      let totalScore = 0;
+      
+      // 안전한 점수 계산 (null/undefined 체크)
+      const baseSeason = baseItem.season ?? 1;
+      const baseColor = baseItem.color ?? 1;
+      const itemSeason = item.season ?? 1;
+      const itemColor = item.color ?? 1;
+      
+      // 계절 매칭 점수
+      const seasonScore = calculateSeasonScore(baseSeason, itemSeason);
+      totalScore += seasonScore;
+      
+      // 색상 매칭 점수
+      const colorScore = calculateColorScore(baseColor, itemColor);
+      totalScore += colorScore;
+      
+      // 스타일 태그 매칭 점수 (객체로 반환)
+      const tagResult = calculateTagScore(baseItem.itemTags || [], item.itemTags || []);
+      totalScore += tagResult.score;
+      
+      return {
+        ...item,
+        matchingScore: totalScore,
+        tagMatchRate: tagResult.matchRate,
+        scoreBreakdown: {
+          season: seasonScore,
+          color: colorScore,
+          tag: tagResult.score
+        },
+        randomSeed: Math.random() // 랜덤 정렬용
+      };
+    });
+  } catch (error) {
+    console.error('점수 계산 중 오류:', error);
+    throw new CustomError('추천 점수 계산 중 오류가 발생했습니다.', 'CALCULATION_ERROR', 500);
+  }
   
-  // 22점 이상인 아이템만 필터링하고 점수순으로 정렬하여 상위 5개 선택
+  // 22점 이상인 아이템만 필터링하고 향상된 정렬 로직 적용
   const recommendedItems = scoredItems
     .filter(item => item.matchingScore >= 22)
-    .sort((a, b) => b.matchingScore - a.matchingScore)
+    .sort((a, b) => {
+      // 1순위: 총 매칭 점수 (높은 순)
+      if (a.matchingScore !== b.matchingScore) {
+        return b.matchingScore - a.matchingScore;
+      }
+      
+      // 2순위: 스타일 태그 일치율 (높은 순)
+      if (a.tagMatchRate !== b.tagMatchRate) {
+        return b.tagMatchRate - a.tagMatchRate;
+      }
+      
+      // 3순위: 아이템 최신 등록순 (ID가 높을수록 최신)
+      if (a.id !== b.id) {
+        return b.id - a.id;
+      }
+      
+      // 4순위: 모든 조건 동일시 랜덤
+      return b.randomSeed - a.randomSeed;
+    })
     .slice(0, 5)
     .map(item => ({
       id: item.id,
@@ -645,6 +755,7 @@ export const getRecommendedCoordinatedItems = async (userId, itemId) => {
         type: itemTag.tag.type
       })),
       matchingScore: item.matchingScore,
+      tagMatchRate: item.tagMatchRate,
       scoreBreakdown: item.scoreBreakdown
     }));
   
