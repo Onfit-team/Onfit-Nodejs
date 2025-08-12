@@ -123,6 +123,32 @@ export const saveItem = async (userId, refinedId) => {
   return { id: item.id, image_url: refinedUrl };
 };
 
+// ✅ 이미지 업로드
+export const uploadImage = async (userId, file) => {
+  if (!file?.buffer) throw new InvalidInputError("이미지 파일이 필요합니다.");
+  
+  try {
+    // 이미지 리사이징 (선택적)
+    const processedImage = await sharp(file.buffer)
+      .resize(1024, 1024, { fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 90 })
+      .toBuffer();
+
+    // S3에 업로드
+    const imageId = uuidv4();
+    const s3Key = `uploads/${userId}/${imageId}.jpg`;
+    const imageUrl = await uploadToS3(processedImage, s3Key);
+
+    return { 
+      id: imageId,
+      image_url: imageUrl,
+      message: "이미지 업로드 성공"
+    };
+  } catch (error) {
+    throw new Error("이미지 업로드 실패: " + error.message);
+  }
+};
+
 // ✅ 크롭 삭제
 export const deleteCropImage = async (userId, cropId) => {
   const urlKey   = `onfit:crop:${userId}:${cropId}:url`;
