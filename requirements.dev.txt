@@ -1,0 +1,18 @@
+# core libs
+diffusers==0.30.0
+transformers==4.44.2
+accelerate
+safetensors
+
+# vision stack
+opencv-python-headless
+Pillow
+numpy
+scikit-image
+
+# yolo / onnx
+ultralytics==8.2.103
+onnxruntime==1.18.0
+
+# hf utils (파이프라인/스냅샷 사용시)
+huggingface_hub

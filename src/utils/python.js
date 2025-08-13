@@ -1,8 +1,12 @@
+// src/utils/python.js
 import { spawn } from "child_process";
 
 export const runPython = (scriptPath, args = []) => {
   return new Promise((resolve, reject) => {
-    const py = spawn("python", [scriptPath, ...args]);
+    // Docker 컨테이너 내 venv Python 강제 사용 (경로 수정)
+    const py = spawn("/app/.venv/bin/python", [scriptPath, ...args], {
+      env: process.env, // 환경 변수 유지
+    });
 
     let stdout = "";
     let stderr = "";
@@ -16,10 +20,20 @@ export const runPython = (scriptPath, args = []) => {
     });
 
     py.on("close", (code) => {
-      if (code !== 0) {
-        return reject(new Error(`Python 종료 오류:\n${stderr}`));
+      if (stderr.trim()) {
+        console.error("🔴 Python stderr:", stderr.trim());
       }
-      resolve(stdout.trim()); // JSON 등 텍스트 반환
+      if (code !== 0) {
+        return reject(
+          new Error(`Python 종료 오류 (code ${code}):\n${stderr}`)
+        );
+      }
+
+      // JSON 배열만 추출 (마지막 [] 블록만)
+      const match = stdout.match(/\[[\s\S]*\]$/m);
+      const jsonText = match ? match[0] : stdout.trim();
+
+      resolve(jsonText);
     });
 
     py.on("error", (err) => {
