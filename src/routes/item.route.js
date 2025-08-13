@@ -21,10 +21,14 @@ const upload = multer({
 router.post("/detect", authenticateJWT, upload.single("image"), itemController.detectItems);
 
 // 아이템 리파인 API
-router.post("/refine", authenticateJWT, itemController.refineItem);
+//router.post("/refine", authenticateJWT, itemController.refineItem);
+// 아이템 리파인 API (수정)
+router.post("/refine", authenticateJWT, upload.none(), itemController.refineItem);
 
+// 아이템 저장 API (수정)
+router.post("/save", authenticateJWT, upload.none(), itemController.saveItem);
 // 아이템 저장 API
-router.post("/save", authenticateJWT, itemController.saveItem);
+//router.post("/save", authenticateJWT, itemController.saveItem);
 
 // 이미지 업로드 API
 router.post("/upload", authenticateJWT, upload.single("image"), itemController.uploadImage);
