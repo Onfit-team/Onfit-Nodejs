@@ -1,11 +1,11 @@
 import * as itemService from "./item.service.js";
 import { CreatedSuccess, OkSuccess } from "../../utils/success.js";
-import { CustomError, InvalidInputError, UnauthorizedError } from "../../utils/error.js";
+import { CustomError, InvalidInputError } from "../../utils/error.js";
 
 export const detectItems = async (req, res, next) => {
   try {
     const userId = req.user?.userId;
-    if (!userId) throw new UnauthorizedError("로그인이 필요합니다");
+    if (!userId) throw new CustomError("로그인이 필요합니다", "UNAUTHORIZED", 401);
 
     const file = req.file;
     if (!file?.buffer) throw new InvalidInputError("이미지 파일이 필요합니다.");
@@ -20,7 +20,7 @@ export const detectItems = async (req, res, next) => {
 export const refineItem = async (req, res, next) => {
   try {
     const userId = req.user?.userId;
-    if (!userId) throw new UnauthorizedError("로그인이 필요합니다");
+    if (!userId) throw new CustomError("로그인이 필요합니다", "UNAUTHORIZED", 401);
 
     const { cropId } = req.body;
     if (!cropId) throw new InvalidInputError("cropId가 필요합니다.");
@@ -35,7 +35,7 @@ export const refineItem = async (req, res, next) => {
 export const saveItem = async (req, res, next) => {
   try {
     const userId = req.user?.userId;
-    if (!userId) throw new UnauthorizedError("로그인이 필요합니다");
+    if (!userId) throw new CustomError("로그인이 필요합니다", "UNAUTHORIZED", 401);
 
     const { refinedId } = req.body;
     if (!refinedId) throw new InvalidInputError("refinedId가 필요합니다.");
@@ -61,6 +61,7 @@ export const uploadImage = async (req, res, next) => {
     next(err);
   }
 };
+
 
 export const deleteCrop = async (req, res, next) => {
   try {
