@@ -52,19 +52,11 @@ COPY --from=builder /build/prisma ./prisma
 # 소스 코드 복사
 COPY src ./src
 COPY package*.json ./
-COPY prisma ./prisma
 COPY scripts ./scripts
 
+# 캐시 디렉토리 생성
+RUN mkdir -p /app/.cache/huggingface
 
 EXPOSE 3000
 CMD ["npm", "start"]
 
-# 소스 코드 복사
-COPY src ./src
-COPY package*.json ./
-COPY prisma ./prisma
-COPY scripts ./scripts
-
-
-EXPOSE 3000
-CMD ["npm", "run", "dev"]
