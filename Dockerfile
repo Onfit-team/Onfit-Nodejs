@@ -9,9 +9,14 @@ RUN apt-get update && apt-get install -y \
 # Python 환경 설정
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
+
+ENV HF_HOME=/tmp/hf_cache
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
-    pip install --no-cache-dir ultralytics opencv-python-headless
+    pip install --no-cache-dir ultralytics opencv-python-headless && \
+    rm -rf /tmp/hf_cache /tmp/pip* && \
+    find /opt/venv -name "*.pyc" -delete && \
+    find /opt/venv -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
 
 COPY package*.json ./
 RUN npm ci --only=production
@@ -34,12 +39,22 @@ RUN apt-get update && apt-get install -y \
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+# HuggingFace 캐시를 앱 내부로 설정 (런타임에 생성)
+ENV HF_HOME=/app/.cache/huggingface
+ENV HF_DATASETS_CACHE=/app/.cache/huggingface
+ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
+
+
 # Node 의존성 복사
 COPY --from=builder /build/node_modules ./node_modules
 COPY --from=builder /build/prisma ./prisma
 
 # 소스 코드 복사
-COPY . .
+COPY src ./src
+COPY package*.json ./
+COPY prisma ./prisma
+COPY scripts ./scripts
+
 
 EXPOSE 3000
 CMD ["npm", "start"]
