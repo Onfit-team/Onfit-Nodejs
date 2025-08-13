@@ -1,0 +1,33 @@
+# ===== Git & IDE =====
+.git
+.gitignore
+.DS_Store
+.idea
+.vscode
+
+# ===== OS / Temp =====
+Thumbs.db
+*.log
+logs
+npm-debug.log*
+*.sqlite
+*.csv
+
+# ===== Node / Python 캐시 (빌드 컨텍스트 제외) =====
+node_modules
+.venv
+__pycache__/
+*.pyc
+
+# ===== Hugging Face 모델 캐시 제외 (이미지에 내장) =====
+hf-cache
+/app/hf-cache
+/opt/venv/huggingface
+
+# ===== 빌드 산출물 제외 =====
+dist
+build
+
+# ===== 환경변수 파일 제외 =====
+.env
+.env.*
