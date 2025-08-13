@@ -31,11 +31,6 @@ jobs:
           echo "✅ SSH 접속 성공"
           cd ~/Onfit-Nodejs || exit 1
 
-          echo "🛑 PM2 프로세스 정리"
-          pm2 stop all || true
-          pm2 delete all || true
-          pm2 kill || true
-
           echo "🚀 Blue-Green 배포 시작"
           ./deploy.sh
 
