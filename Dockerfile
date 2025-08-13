@@ -20,7 +20,7 @@ COPY package*.json ./
 RUN npm ci --only=production && \
     npm install sharp --platform=linux --arch=x64
 
-# Prisma 설정 (빌드 시점에만 실행)
+# Prisma 설정
 COPY prisma ./prisma
 RUN npx prisma generate
 
@@ -28,15 +28,16 @@ RUN npx prisma generate
 COPY src ./src
 COPY scripts ./scripts
 
-# ✅ 권한 설정 - node 사용자에게 필요한 디렉토리 소유권 부여
-RUN mkdir -p /app/.cache/huggingface && \
+# ✅ uploads 디렉토리 추가 (권한 문제 해결)
+RUN mkdir -p /app/.cache/huggingface /app/uploads /app/logs && \
     chown -R node:node /app/node_modules/.prisma && \
-    chown -R node:node /app/.cache/huggingface
+    chown -R node:node /app/.cache/huggingface && \
+    chown -R node:node /app/uploads && \
+    chown -R node:node /app/logs
 
 # 환경변수 설정
 ENV HF_HOME=/app/.cache/huggingface
-ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
 
 EXPOSE 3000
 USER node
-CMD ["npm", "start"]  # ← 이제 prisma generate 없이 실행
+CMD ["npm", "start"]
