@@ -139,10 +139,10 @@ export async function createOutfit(outfitData) {
   } = outfitData;
   
 // 해당 날짜에 이미 등록된 outfit이 있는지 확인
-  const inputDate = new Date(date);
-  const startOfDay = new Date(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 0, 0, 0, 0);
-  const endOfDay = new Date(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 23, 59, 59, 999);
-
+  const inputDate = new Date(date+'T00:00:00+09:00');
+//  const startOfDay = new Date(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 0, 0, 0, 0);
+ // const endOfDay = new Date(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 23, 59, 59, 999);
+/*
   const existingOutfit = await prisma.outfit.findFirst({
     where: {
       userId,
@@ -152,11 +152,12 @@ export async function createOutfit(outfitData) {
       }
     }
   });
+  
 
   if (existingOutfit) {
     throw new Error('이미 해당 날짜에 등록된 코디가 있습니다. 하루에 하나의 코디만 등록할 수 있습니다.');
   }
-
+*/
   // 1. 위치 정보 가져오기
   const location = await getCurrentLocation(userId);
   
@@ -196,10 +197,18 @@ export async function createOutfit(outfitData) {
 }
 
 export async function getUserRecent7DaysOutfits(userId) {
-  // 7일 전 시작일과 오늘 종료일 계산
-  const to   = new Date(); to.setHours(23,59,59,999);
-  const from = new Date(); from.setDate(from.getDate() - 6);
-                       from.setHours(0,0,0,0);
+   // ✅ 한국 시간대 기준으로 7일 전부터 오늘까지
+  const now = new Date();
+  
+  // 한국 시간으로 변환
+  const kstNow = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
+  
+  const to = new Date(kstNow);
+  to.setHours(23, 59, 59, 999);
+  
+  const from = new Date(kstNow);
+  from.setDate(from.getDate() - 6);
+  from.setHours(0, 0, 0, 0);
 
   // DB에서 조회
   const outfits = await prisma.outfit.findMany({
@@ -223,7 +232,12 @@ export async function getUserRecent7DaysOutfits(userId) {
   return {
     userName: user.nickname,
     outfits: outfits.map(o => ({
-      date: o.date.toISOString().split('T')[0],  // YYYY-MM-DD
+       date: o.date.toLocaleDateString('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit', 
+        day: '2-digit'
+      }).replace(/\. /g, '-').replace(/\.$/, ''), // 2025-01-13 형식
       image: o.mainImage
     }))
   };
