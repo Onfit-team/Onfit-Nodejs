@@ -10,13 +10,14 @@ RUN apt-get update && apt-get install -y \
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-ENV HF_HOME=/tmp/hf_cache
+# Python 패키지 설치 및 RMBG 모델 다운로드
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
-    pip install --no-cache-dir ultralytics opencv-python-headless && \
-    rm -rf /tmp/hf_cache /tmp/pip* && \
-    find /opt/venv -name "*.pyc" -delete && \
-    find /opt/venv -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+    pip install --no-cache-dir ultralytics opencv-python-headless transformers scikit-image && \
+    python -c "from transformers import AutoModelForImageSegmentation; print('Downloading RMBG model...'); AutoModelForImageSegmentation.from_pretrained('briaai/RMBG-1.4', trust_remote_code=True); print('Model downloaded successfully!')" && \
+    rm -rf /tmp/pip* && \
+    find /opt/venv -name "*.pyc" -delete
+
 
 COPY package*.json ./
 RUN npm ci --only=production
@@ -37,13 +38,13 @@ RUN apt-get update && apt-get install -y \
 
 # Python venv 복사
 COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder /opt/hf_cache /app/.cache/huggingface
 ENV PATH="/opt/venv/bin:$PATH"
 
 # HuggingFace 캐시를 앱 내부로 설정 (런타임에 생성)
 ENV HF_HOME=/app/.cache/huggingface
 ENV HF_DATASETS_CACHE=/app/.cache/huggingface
 ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
-
 
 # Node 의존성 복사
 COPY --from=builder /build/node_modules ./node_modules
@@ -54,9 +55,10 @@ COPY src ./src
 COPY package*.json ./
 COPY scripts ./scripts
 
-# 캐시 디렉토리 생성
-RUN mkdir -p /app/.cache/huggingface
+# 권한 설정
+RUN chown -R node:node /app/.cache/huggingface
 
 EXPOSE 3000
+USER node
 CMD ["npm", "start"]
 
