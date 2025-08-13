@@ -25,6 +25,7 @@ coverage
 test
 tests
 __tests__
+**/tests/**
 
 # 에디터 설정
 .vscode
@@ -73,3 +74,7 @@ __pycache__/
 .Python
 pip-log.txt
 pip-delete-this-directory.txt
+
+
+.venv/
+venv/
