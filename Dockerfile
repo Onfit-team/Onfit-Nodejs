@@ -1,62 +1,70 @@
-# ===========================================
-# Base
-# ===========================================
-FROM node:20-bullseye AS base
+FROM node:20 AS builder
+WORKDIR /build
+
+# 시스템 패키지 설치
 RUN apt-get update && apt-get install -y \
-    python3 python3-pip python3-venv git libgl1 libglib2.0-0 \
+    python3 python3-pip python3-venv libvips-dev curl \
     && rm -rf /var/lib/apt/lists/*
-WORKDIR /app
 
-# Python venv
-RUN python3 -m venv /app/.venv
-ENV PATH="/app/.venv/bin:$PATH" \
-    HF_HOME=/app/.venv/huggingface
+# Python 환경 설정
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-# ===========================================
-# Deps
-# ===========================================
-FROM base AS deps
+ENV HF_HOME=/tmp/hf_cache
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir ultralytics opencv-python-headless && \
+    rm -rf /tmp/hf_cache /tmp/pip* && \
+    find /opt/venv -name "*.pyc" -delete && \
+    find /opt/venv -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --only=production
+RUN npm install sharp --platform=linux --arch=x64
 
-COPY requirements.txt ./
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir \
-      --index-url https://download.pytorch.org/whl/cpu \
-      torch torchvision torchaudio && \
-    pip install --no-cache-dir -r requirements.txt && \
-    python -c "from transformers import pipeline; pipeline('image-segmentation', model='briaai/RMBG-1.4', trust_remote_code=True)" && \
-    python -c "from diffusers import StableDiffusionInpaintPipeline; StableDiffusionInpaintPipeline.from_pretrained('runwayml/stable-diffusion-inpainting')"
-
-# ===========================================
-# Build
-# ===========================================
-FROM deps AS build
+# Prisma 스키마 복사 및 클라이언트 생성
 COPY prisma ./prisma
 RUN npx prisma generate
+
+# Runtime Stage
+FROM node:20
+WORKDIR /app
+
+# 런타임 의존성
+RUN apt-get update && apt-get install -y \
+    python3 libvips-dev curl libgl1-mesa-glx \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python venv 복사
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# HuggingFace 캐시를 앱 내부로 설정 (런타임에 생성)
+ENV HF_HOME=/app/.cache/huggingface
+ENV HF_DATASETS_CACHE=/app/.cache/huggingface
+ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
+
+
+# Node 의존성 복사
+COPY --from=builder /build/node_modules ./node_modules
+COPY --from=builder /build/prisma ./prisma
+
+# 소스 코드 복사
 COPY src ./src
-
-# ===========================================
-# Runtime
-# ===========================================
-FROM base AS runtime
-
-# Node deps
-COPY --from=deps /app/node_modules ./node_modules
-
-# Python deps & 모델 캐시
-COPY --from=deps /app/.venv /app/.venv
-
-# App files
-COPY --from=build /app/prisma ./prisma
-COPY --from=build /app/src ./src
 COPY package*.json ./
+COPY prisma ./prisma
+COPY scripts ./scripts
 
-# 환경변수
-ENV HF_HOME=/app/.venv/huggingface \
-    HF_INPAINT_MODEL_PATH=/app/.venv/huggingface/stable-diffusion-inpainting \
-    HF_RMBG_MODEL_PATH=/app/.venv/huggingface/models--briaai--RMBG-1.4 \
-    PATH="/app/.venv/bin:$PATH"
+
+EXPOSE 3000
+CMD ["npm", "start"]
+
+# 소스 코드 복사
+COPY src ./src
+COPY package*.json ./
+COPY prisma ./prisma
+COPY scripts ./scripts
+
 
 EXPOSE 3000
 CMD ["npm", "run", "dev"]
