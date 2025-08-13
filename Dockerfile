@@ -10,43 +10,36 @@ RUN apt-get update && apt-get install -y \
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Python 패키지 설치 및 RMBG 모델 다운로드
+# Python 패키지 설치
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir ultralytics opencv-python-headless transformers scikit-image && \
-    python -c "from transformers import AutoModelForImageSegmentation; print('Downloading RMBG model...'); AutoModelForImageSegmentation.from_pretrained('briaai/RMBG-1.4', trust_remote_code=True); print('Model downloaded successfully!')" && \
     rm -rf /tmp/pip* && \
     find /opt/venv -name "*.pyc" -delete
 
-
+# Node.js 의존성 설치
 COPY package*.json ./
-RUN npm ci --only=production
-RUN npm install sharp --platform=linux --arch=x64
+RUN npm ci --only=production && \
+    npm install sharp --platform=linux --arch=x64
 
 # Prisma 스키마 복사 및 클라이언트 생성
 COPY prisma ./prisma
 RUN npx prisma generate
 
-# Runtime Stage
+# ===== Runtime Stage =====
 FROM node:20
 WORKDIR /app
 
-# 런타임 의존성
+# 런타임 의존성만 설치
 RUN apt-get update && apt-get install -y \
     python3 libvips-dev curl libgl1-mesa-glx \
     && rm -rf /var/lib/apt/lists/*
 
-# Python venv 복사
+# ✅ Builder에서 Python 환경 복사
 COPY --from=builder /opt/venv /opt/venv
-COPY --from=builder /opt/hf_cache /app/.cache/huggingface
 ENV PATH="/opt/venv/bin:$PATH"
 
-# HuggingFace 캐시를 앱 내부로 설정 (런타임에 생성)
-ENV HF_HOME=/app/.cache/huggingface
-ENV HF_DATASETS_CACHE=/app/.cache/huggingface
-ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
-
-# Node 의존성 복사
+# ✅ Builder에서 Node.js 의존성 복사
 COPY --from=builder /build/node_modules ./node_modules
 COPY --from=builder /build/prisma ./prisma
 
@@ -55,10 +48,14 @@ COPY src ./src
 COPY package*.json ./
 COPY scripts ./scripts
 
-# 권한 설정
-RUN chown -R node:node /app/.cache/huggingface
+# HuggingFace 캐시 디렉토리 생성
+RUN mkdir -p /app/.cache/huggingface && \
+    chown -R node:node /app/.cache/huggingface
+
+# 환경변수 설정
+ENV HF_HOME=/app/.cache/huggingface
+ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
 
 EXPOSE 3000
 USER node
 CMD ["npm", "start"]
-
