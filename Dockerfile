@@ -58,3 +58,13 @@ COPY scripts ./scripts
 
 EXPOSE 3000
 CMD ["npm", "start"]
+
+# 소스 코드 복사
+COPY src ./src
+COPY package*.json ./
+COPY prisma ./prisma
+COPY scripts ./scripts
+
+
+EXPOSE 3000
+CMD ["npm", "run", "dev"]
