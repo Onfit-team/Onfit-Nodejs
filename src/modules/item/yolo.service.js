@@ -10,8 +10,8 @@ export const runYolo = (buffer) => {
     fs.writeFileSync(tempPath, buffer); // 저장
 
     const py = spawn("python", [
-      "src/modules/item/predict_v8.py", // YOLOv8용 새 스크립트
-      "src/modules/item/yolo_models/best.pt",
+      "src/modules/item/yolo/predict_v8.py", // YOLOv8용 새 스크립트
+      "src/modules/item/yolo/yolo_models/best.pt",
       tempPath,
     ]);
 
