@@ -47,3 +47,6 @@ docker-data/
 uploads/
 
 src/modules/item/rmbg_api/app/model.pth
+
+src/generated/
+prisma/generated/
