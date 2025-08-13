@@ -1,0 +1,43 @@
+# ===========================================
+# Base
+# ===========================================
+FROM python:3.11-slim AS base
+RUN apt-get update && apt-get install -y \
+    git libgl1 libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+
+# Python venv
+RUN python3 -m venv /app/.venv
+ENV PATH="/app/.venv/bin:$PATH" \
+    HF_HOME=/app/.venv/huggingface
+
+# ===========================================
+# Install deps (최신 torch CPU 버전)
+# ===========================================
+FROM base AS deps
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu \
+        torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 && \
+    pip install --no-cache-dir -r requirements.txt
+
+# ===========================================
+# Model caching (한 번만 실행됨)
+# ===========================================
+FROM deps AS models
+COPY install_models.sh ./install_models.sh
+RUN chmod +x install_models.sh && ./install_models.sh
+
+# ===========================================
+# Runtime
+# ===========================================
+FROM base AS runtime
+COPY --from=models /app/.venv /app/.venv
+COPY . .
+ENV HF_HOME=/app/.venv/huggingface \
+    HF_INPAINT_MODEL_PATH=/app/.venv/huggingface/stable-diffusion-inpainting \
+    HF_RMBG_MODEL_PATH=/app/.venv/huggingface/models--briaai--RMBG-1.4 \
+    PATH="/app/.venv/bin:$PATH"
+EXPOSE 7860
+CMD ["python", "app.py"]

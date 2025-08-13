@@ -1,22 +1,49 @@
-node_modules
-# Keep environment variables out of version control
-docker-compose.yml
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python
+.venv/
+env/
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.python-version
+.pytest_cache/
+.hypothesis/
+
+# Environment & Config
 .env
+.env.local
+.env.*.local
 
-
-/src/generated/prisma
+# OS & Editor
+.DS_Store
+Thumbs.db
 .idea/
-*.sql
-# Database setup files (local only)
-create_database.sql
-insert_seed_data.sql
-.env
+.vscode/
+*.swp
+*.swo
 
-# RMBG weight
-src/modules/item/rmbg_api/app/model.pth
-# env
-.env
-.env.*
-*.env
-# RMBG weight
+# Build & Logs
+dist/
+build/
+.cache/
+coverage/
+logs/
+*.log
+
+# Docker & Hugging Face Cache
+hf-cache/
+__huggingface__/
+mnt/models/
+docker-data/
+uploads/
+
 src/modules/item/rmbg_api/app/model.pth

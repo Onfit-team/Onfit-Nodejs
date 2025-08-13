@@ -1,0 +1,15 @@
+# YOLO
+ultralytics==8.2.103
+
+# HuggingFace & Diffusion
+transformers==4.44.2
+diffusers
+accelerate
+safetensors
+
+# Image Processing
+opencv-python-headless==4.8.0.76
+Pillow==10.0.0
+numpy==1.24.0
+onnxruntime==1.18.0
+scikit-image
