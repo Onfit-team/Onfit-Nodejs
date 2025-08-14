@@ -16,7 +16,6 @@ export const itemRepository = {
   },
 
   async create(data) {
-    // userId 대신 user: { connect: { id: userId } } 처리
     const { userId, ...otherData } = data;
     return await prisma.item.create({
       data: {
