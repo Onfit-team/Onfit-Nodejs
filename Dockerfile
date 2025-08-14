@@ -1,24 +1,49 @@
-FROM node:20-bullseye AS base
-
-# sharp + onnxruntime-node 빌드 의존성 설치
-RUN apt-get update --fix-missing && apt-get install -y --no-install-recommends \
-    python3 python3-pip build-essential libvips-dev \
-    && rm -rf /var/lib/apt/lists/*
-
+FROM node:20
 WORKDIR /app
 
-# package.json만 복사 후 설치 (캐시 활용)
+# 시스템 패키지 설치
+RUN apt-get update && apt-get install -y \
+    python3 python3-pip python3-venv libvips-dev curl libgl1-mesa-glx \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python 환경 설정
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Python 패키지 설치
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir ultralytics opencv-python-headless transformers scikit-image
+
+# ⭐ 모델 사전 다운로드 (이것만 추가!)
+RUN python -c "from transformers import pipeline; pipeline('image-segmentation', model='briaai/RMBG-1.4', trust_remote_code=True)"
+
+# Node.js 의존성 설치
 COPY package*.json ./
+RUN npm ci --only=production && \
+    npm install sharp --platform=linux --arch=x64
 
-# 의존성 설치 (컨테이너 환경 전용 빌드)
-# --include=optional : sharp 같은 optional deps 설치
-# --force rebuild : 환경 맞춰서 네이티브 재빌드
-RUN npm ci --include=optional \
-    && npm rebuild sharp --force --include=optional \
-    && npm rebuild onnxruntime-node --force --include=optional
+# Prisma 설정
+COPY prisma ./prisma
+RUN npx prisma generate
 
-# 앱 전체 복사
-COPY . .
+# 소스 코드 복사
+COPY src ./src
+COPY scripts ./scripts
+
+# ⭐ Python 심볼릭 링크 (이것만 추가!)
+RUN ln -sf /opt/venv/bin/python /usr/local/bin/python3
+
+# ✅ uploads 디렉토리 추가 (권한 문제 해결)
+RUN mkdir -p /app/.cache/huggingface /app/uploads /app/logs && \
+    chown -R node:node /app/node_modules/.prisma && \
+    chown -R node:node /app/.cache/huggingface && \
+    chown -R node:node /app/uploads && \
+    chown -R node:node /app/logs
+
+# 환경변수 설정
+ENV HF_HOME=/app/.cache/huggingface
 
 EXPOSE 3000
-CMD ["npm", "run", "dev"]
+USER node
+CMD ["npm", "start"]
