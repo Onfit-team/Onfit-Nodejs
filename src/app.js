@@ -15,9 +15,54 @@ import modelRouter from './routes/model.route.js';
 import locationRouter from "./routes/location.route.js";
 import communityRouter from './routes/community.route.js';
 
+import client from 'prom-client';
+
+// Prometheus 레지스터 생성
+const register = new client.Registry();
+
+// 기본 Node.js 메트릭 자동 수집 (메모리, CPU 등)
+client.collectDefaultMetrics({ register });
+
+// HTTP 요청 카운터
+const httpRequestCounter = new client.Counter({
+  name: 'http_requests_total',
+  help: 'Total number of HTTP requests',
+  labelNames: ['method', 'route', 'status'],
+  registers: [register]
+});
+
+// HTTP 요청 시간 히스토그램
+const httpRequestDuration = new client.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'Duration of HTTP requests in seconds',
+  labelNames: ['method', 'route', 'status'],
+  registers: [register]
+});
+
 const app = express(); 
 app.use(cors());
 app.use(express.json());
+
+app.use((req, res, next) => {
+  const start = Date.now();
+  
+  res.on('finish', () => {
+    const duration = (Date.now() - start) / 1000;
+    httpRequestCounter.inc({
+      method: req.method,
+      route: req.path,
+      status: res.statusCode
+    });
+    httpRequestDuration.observe({
+      method: req.method,
+      route: req.path,
+      status: res.statusCode
+    }, duration);
+  });
+  
+  next();
+});
+
 app.use(passport.initialize());
 
 app.use('/user', userRoutes);
@@ -29,6 +74,11 @@ app.use('/location', locationRouter);
 app.use('/items', itemsRouter);
 app.use('/model', modelRouter);
 app.use('/community', communityRouter);
+
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
+});
 
 app.use(errorHandler);
 
