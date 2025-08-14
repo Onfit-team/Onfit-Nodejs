@@ -1,8 +1,4 @@
-x-logging: &default-logging
-  driver: json-file
-  options:
-    max-size: "10m"
-    max-file: "3"
+version: "3.9"
 
 services:
   redis:
@@ -12,9 +8,6 @@ services:
     restart: always
     ports:
       - "6379:6379"
-    volumes:
-      - redis-data:/data
-    logging: *default-logging
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -25,48 +18,18 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: npm run dev
     container_name: onfit-backend
-    restart: always
-    depends_on:
-      redis:
-        condition: service_healthy
-      rmbg-api:
-        condition: service_started
+    command: npm run dev
     ports:
       - "3000:3000"
     env_file:
       - .env
-    environment:
-      NODE_ENV: development
-      CHOKIDAR_USEPOLLING: "true"
-      REDIS_URL: redis://redis:6379
-      HF_HOME: /app/.venv/huggingface
-      HF_RMBG_MODEL_PATH: /app/.venv/huggingface/models--briaai--RMBG-1.4
-      HF_INPAINT_MODEL_PATH: /app/.venv/huggingface/stable-diffusion-inpainting
+    depends_on:
+      redis:
+        condition: service_healthy
     volumes:
+      # node_modules 절대 마운트 금지
       - ./src:/app/src
       - ./prisma:/app/prisma
-      - ./package.json:/app/package.json
-      - hf_cache:/app/.venv/huggingface
-    logging: *default-logging
-
-  rmbg-api:
-    build:
-      context: ./src/modules/item
-      dockerfile: Dockerfile.python
-    container_name: rmbg-api
-    environment:
-      HF_HOME: /app/.venv/huggingface
-      HF_RMBG_MODEL_PATH: /app/.venv/huggingface/models--briaai--RMBG-1.4
-      HF_INPAINT_MODEL_PATH: /app/.venv/huggingface/stable-diffusion-inpainting
-    ports:
-      - "7860:7860"
-    volumes:
-      - ./src/modules/item:/app
-      - hf_cache:/app/.venv/huggingface
-    logging: *default-logging
-
-volumes:
-  redis-data:
-  hf_cache:
+      - ./package.json:/app/package.json:ro
+      - ./package-lock.json:/app/package-lock.json:ro
