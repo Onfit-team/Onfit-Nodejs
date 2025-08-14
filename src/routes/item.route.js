@@ -1,3 +1,4 @@
+// 📂 src/routes/item.route.js
 import express from "express";
 import multer from "multer";
 import { authenticateJWT } from "../middlewares/auth.middleware.js";
@@ -34,6 +35,6 @@ router.post("/save", authenticateJWT, upload.none(), itemController.saveItem);
 router.post("/upload", authenticateJWT, upload.single("image"), itemController.uploadImage);
 
 // 크롭 이미지 삭제 API
-router.delete("/:crop_id", authenticateJWT, itemController.deleteCrop);
+router.delete("/crop/:cropId", authenticateJWT, itemController.deleteCrop);
 
 export default router;
