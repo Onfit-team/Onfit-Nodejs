@@ -2,40 +2,7 @@ version: "3.9"
 
 services:
   onfit-backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    command: npm run dev
-    environment:
-      NODE_ENV: development
-      CHOKIDAR_USEPOLLING: "true"
-      HF_HOME: /opt/venv/huggingface
-      HF_RMBG_MODEL_PATH: /opt/venv/huggingface/models--briaai--RMBG-1.4
-      HF_INPAINT_MODEL_PATH: /opt/venv/huggingface/stable-diffusion-inpainting
-    ports:
-      - "3000:3000"
     volumes:
-      - ./src:/app/src
-      - ./prisma:/app/prisma
-      - ./package.json:/app/package.json
-      - hf_cache:/opt/venv/huggingface
-    depends_on:
-      - rmbg-api
-
-  rmbg-api:
-    build:
-      context: ./src/modules/item
-      dockerfile: Dockerfile.python
-    container_name: rmbg-api
+      - ./yolo-models:/app/.yolo-models
     environment:
-      HF_HOME: /opt/venv/huggingface
-      HF_RMBG_MODEL_PATH: /opt/venv/huggingface/models--briaai--RMBG-1.4
-      HF_INPAINT_MODEL_PATH: /opt/venv/huggingface/stable-diffusion-inpainting
-    ports:
-      - "7860:7860"
-    volumes:
-      - ./src/modules/item:/app
-      - hf_cache:/opt/venv/huggingface
-
-volumes:
-  hf_cache:
+      YOLO_MODEL_DIR: /app/.yolo-models
