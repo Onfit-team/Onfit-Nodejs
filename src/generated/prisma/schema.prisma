@@ -1,0 +1,123 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int          @id @default(autoincrement())
+  email        String       @unique
+  password     String
+  nickname     String
+  profileImage String?
+  items        Item[]
+  outfits      Outfit[]
+  outfitLikes  OutfitLike[]
+}
+
+model Item {
+  id           Int          @id @default(autoincrement())
+  user         User         @relation(fields: [userId], references: [id])
+  userId       Int
+  category     Int
+  subcategory  Int
+  brand        String?
+  color        Int
+  size         String?
+  season       Int
+  purchaseDate DateTime?
+  image        String?
+  isDeleted    Boolean      @default(false)
+  itemTags     ItemTag[]
+  outfitItems  OutfitItem[]
+}
+
+model Location {
+  id      Int       @id @default(autoincrement())
+  sido    String
+  sigungu String
+  dong    String
+  code    String    @unique
+  weather Weather[]
+  outfits Outfit[]
+}
+
+model Weather {
+  date          DateTime
+  location      Location @relation(fields: [locationId], references: [id])
+  locationId    Int
+  tempMin       Float?
+  tempMax       Float?
+  tempAvg       Float?
+  feelsLike     Float?
+  precipitation Float?
+  weatherIcon   String?
+  status        String?
+
+  @@id([date, locationId])
+}
+
+model Outfit {
+  id             Int          @id @default(autoincrement())
+  user           User         @relation(fields: [userId], references: [id])
+  userId         Int
+  location       Location     @relation(fields: [locationId], references: [id])
+  locationId     Int
+  date           DateTime
+  weatherTempAvg Float?
+  mainImage      String?
+  memo           String?
+  outfitItems    OutfitItem[]
+  outfitTags     OutfitTag[]
+  outfitLikes    OutfitLike[]
+}
+
+model Tag {
+  id         Int         @id @default(autoincrement())
+  name       String
+  type       String // ENUM('mood', 'purpose', 'style') 등으로 변환 가능
+  itemTags   ItemTag[]
+  outfitTags OutfitTag[]
+}
+
+model ItemTag {
+  id     Int  @id @default(autoincrement())
+  item   Item @relation(fields: [itemId], references: [id])
+  itemId Int
+  tag    Tag  @relation(fields: [tagId], references: [id])
+  tagId  Int
+}
+
+model OutfitItem {
+  id       Int    @id @default(autoincrement())
+  outfit   Outfit @relation(fields: [outfitId], references: [id])
+  outfitId Int
+  item     Item   @relation(fields: [itemId], references: [id])
+  itemId   Int
+}
+
+model OutfitTag {
+  id       Int    @id @default(autoincrement())
+  outfit   Outfit @relation(fields: [outfitId], references: [id])
+  outfitId Int
+  tag      Tag    @relation(fields: [tagId], references: [id])
+  tagId    Int
+}
+
+model OutfitLike {
+  id       Int    @id @default(autoincrement())
+  outfit   Outfit @relation(fields: [outfitId], references: [id])
+  outfitId Int
+  user     User   @relation(fields: [userId], references: [id])
+  userId   Int
+}
