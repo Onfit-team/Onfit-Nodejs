@@ -15,6 +15,13 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir ultralytics opencv-python-headless transformers scikit-image diffusers accelerate
 
+# Hugging Face 캐시 경로
+ENV HF_HOME=/app/.cache/huggingface
+
+# RMBG 모델 사전 다운로드
+RUN python -c "from transformers import pipeline; \
+    pipeline('image-segmentation', model='briaai/RMBG-1.4', trust_remote_code=True)"
+
 # Node.js 의존성 설치
 COPY package*.json ./
 RUN npm ci --only=production && \
@@ -31,15 +38,12 @@ COPY scripts ./scripts
 # Python 심볼릭 링크
 RUN ln -sf /opt/venv/bin/python /usr/local/bin/python3
 
-# ✅ uploads 디렉토리 추가 (권한 문제 해결)
-RUN mkdir -p /app/.cache/huggingface /app/uploads /app/logs && \
+# 권한 설정
+RUN mkdir -p /app/uploads /app/logs && \
     chown -R node:node /app/node_modules/.prisma && \
     chown -R node:node /app/.cache/huggingface && \
     chown -R node:node /app/uploads && \
     chown -R node:node /app/logs
-
-# 환경변수 설정
-ENV HF_HOME=/app/.cache/huggingface
 
 EXPOSE 3000
 USER node
