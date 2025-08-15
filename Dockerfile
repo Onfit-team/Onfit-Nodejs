@@ -11,13 +11,14 @@ RUN apt-get update && apt-get install -y \
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# 3. Python 패키지만 설치 (모델 다운로드 X)
-RUN pip install --no-cache-dir \
-    torch torchvision --index-url https://download.pytorch.org/whl/cpu \
-    transformers \
-    opencv-python-headless \
-    pillow \
-    numpy
+# 3. ⭐ Python 패키지 설치 (수정됨 - 따로따로 설치)
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir \
+        transformers \
+        opencv-python-headless \
+        pillow \
+        numpy
 
 # 4. Node.js 의존성
 COPY package*.json ./
