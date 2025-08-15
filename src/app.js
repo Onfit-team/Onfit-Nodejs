@@ -83,12 +83,28 @@ app.get('/metrics', async (req, res) => {
 app.use(errorHandler);
 
 app.get('/', (req, res) => {
-  res.send('서버 정상 작동 중!');
+  res.status(200).json({
+    status: 'ok',
+    message: '서버 정상 작동 중!',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 헬스체크 전용 엔드포인트 추가
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
 });
 
 const host = process.env.HOST || '0.0.0.0';
 const port = process.env.PORT || 3000;
 
 app.listen(port, host, () => {
-  console.log(`Server running on http://${host}:${port}`);
+  console.log(`✅ Server running on http://${host}:${port}`);
+  console.log(`✅ Health check available at http://${host}:${port}/health`);
+  console.log(`✅ Root endpoint available at http://${host}:${port}/`);
+  console.log(`✅ Metrics available at http://${host}:${port}/metrics`);
 });
