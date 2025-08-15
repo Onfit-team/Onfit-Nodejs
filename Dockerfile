@@ -13,12 +13,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Python 패키지 설치
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
-    pip install --no-cache-dir ultralytics opencv-python-headless transformers scikit-image
-
-# ⭐ 모델 사전 다운로드 (이것만 추가!)
-RUN python -c "from transformers import pipeline; pipeline('image-segmentation', model='briaai/RMBG-1.4', trust_remote_code=True)"
-RUN python -c "from transformers import pipeline; pipeline('image-segmentation', model='briaai/RMBG-1.4', trust_remote_code=True)" && \
-    python -c "from diffusers import StableDiffusionInpaintPipeline; StableDiffusionInpaintPipeline.from_pretrained('runwayml/stable-diffusion-inpainting')"
+    pip install --no-cache-dir ultralytics opencv-python-headless transformers scikit-image diffusers accelerate
 
 # Node.js 의존성 설치
 COPY package*.json ./
@@ -33,7 +28,7 @@ RUN npx prisma generate
 COPY src ./src
 COPY scripts ./scripts
 
-# ⭐ Python 심볼릭 링크 (이것만 추가!)
+# Python 심볼릭 링크
 RUN ln -sf /opt/venv/bin/python /usr/local/bin/python3
 
 # ✅ uploads 디렉토리 추가 (권한 문제 해결)
