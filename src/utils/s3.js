@@ -13,8 +13,8 @@ export async function uploadToS3(buffer, key) {
     Bucket: process.env.AWS_BUCKET_NAME,
     Key: key,
     Body: buffer,
-    ContentType: "image/png",
-    ACL: "public-read",
+    ContentType: "image/png"
+    //ACL: "public-read",
   });
 
   await s3.send(command);
