@@ -106,7 +106,8 @@ Onfit-Nodejs/
 ├── .github/workflows/   # CI/CD 설정
 └── Dockerfile          # Docker 설정
 
-## 👩‍💻팀원 정보
+
+# 👩‍💻팀원 정보
 - 김채연/몽모 (팀장)
 - 장문선/도요
 - 김예빈/그린
