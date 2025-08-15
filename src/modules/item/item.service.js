@@ -8,6 +8,7 @@ import { runYolo } from "../../utils/yolo.js";
 import { InvalidInputError, NotExistsError } from "../../utils/error.js";
 import { removeBackground} from "../../utils/rmbg.js";
 import OpenAI from "openai";
+import { itemRepository } from "./item.repository.js"; // 같은 폴더에서 import
 
 const ONE_DAY = 86400;
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
