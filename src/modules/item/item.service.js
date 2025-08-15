@@ -6,7 +6,7 @@ import redisClient from "../../utils/redis.js";
 import { uploadToS3 } from "../../utils/s3.js";
 import { runYolo } from "../../utils/yolo.js";
 import { InvalidInputError, NotExistsError } from "../../utils/error.js";
-import { removeBackground, initOnnx } from "../../utils/rmbg.js";
+import { removeBackground} from "../../utils/rmbg.js";
 import OpenAI from "openai";
 
 const ONE_DAY = 86400;
