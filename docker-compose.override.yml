@@ -1,0 +1,8 @@
+version: "3.9"
+
+services:
+  onfit-backend:
+    volumes:
+      - ./yolo-models:/app/.yolo-models
+    environment:
+      YOLO_MODEL_DIR: /app/.yolo-models

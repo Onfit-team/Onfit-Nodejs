@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    command: ["redis-server", "--appendonly", "yes"]
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  rmbg-api:
+    build:
+      context: .
+      dockerfile: rmbg-api/Dockerfile
+    container_name: rmbg-api
+    restart: unless-stopped
+    mem_limit: 2g
+    cpus: "2.0"
+
+  onfit-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: onfit-backend
+    command: npm run dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      RMBG_API_BASE_URL: http://rmbg-api:7860
+    depends_on:
+      redis:
+        condition: service_healthy
+      rmbg-api:
+        condition: service_started
+    volumes:
+      - ./src:/app/src
+      - ./prisma:/app/prisma
+      - ./package.json:/app/package.json:ro
+      - ./package-lock.json:/app/package-lock.json:ro

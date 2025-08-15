@@ -1,0 +1,110 @@
+import dotenv from "dotenv";
+const result = dotenv.config();
+
+import cors from 'cors';
+import express from 'express';
+import passport from './modules/user/kakao.strategy.js';
+import userRoutes from './routes/user.route.js';
+import homeRouter from './routes/home.route.js';
+import outfitRoutes from './routes/outfit.route.js';
+import calendarRoute from './routes/calendar.route.js';
+import { errorHandler } from './middlewares/error.middleware.js';
+import wardrobeRouter from './routes/wardrobe.route.js';
+import itemsRouter from './routes/item.route.js';
+import modelRouter from './routes/model.route.js';
+import locationRouter from "./routes/location.route.js";
+import communityRouter from './routes/community.route.js';
+
+import client from 'prom-client';
+
+// Prometheus 레지스터 생성
+const register = new client.Registry();
+
+// 기본 Node.js 메트릭 자동 수집 (메모리, CPU 등)
+client.collectDefaultMetrics({ register });
+
+// HTTP 요청 카운터
+const httpRequestCounter = new client.Counter({
+  name: 'http_requests_total',
+  help: 'Total number of HTTP requests',
+  labelNames: ['method', 'route', 'status'],
+  registers: [register]
+});
+
+// HTTP 요청 시간 히스토그램
+const httpRequestDuration = new client.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'Duration of HTTP requests in seconds',
+  labelNames: ['method', 'route', 'status'],
+  registers: [register]
+});
+
+const app = express(); 
+app.use(cors());
+app.use(express.json());
+
+app.use((req, res, next) => {
+  const start = Date.now();
+  
+  res.on('finish', () => {
+    const duration = (Date.now() - start) / 1000;
+    httpRequestCounter.inc({
+      method: req.method,
+      route: req.path,
+      status: res.statusCode
+    });
+    httpRequestDuration.observe({
+      method: req.method,
+      route: req.path,
+      status: res.statusCode
+    }, duration);
+  });
+  
+  next();
+});
+
+app.use(passport.initialize());
+
+app.use('/user', userRoutes);
+app.use(homeRouter);
+app.use(outfitRoutes);
+app.use('/calendar', calendarRoute);
+app.use('/wardrobe', wardrobeRouter);
+app.use('/location', locationRouter);
+app.use('/items', itemsRouter);
+app.use('/model', modelRouter);
+app.use('/community', communityRouter);
+
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
+});
+
+app.use(errorHandler);
+
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    message: '서버 정상 작동 중!',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 헬스체크 전용 엔드포인트 추가
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+const host = process.env.HOST || '0.0.0.0';
+const port = process.env.PORT || 3000;
+
+app.listen(port, host, () => {
+  console.log(`✅ Server running on http://${host}:${port}`);
+  console.log(`✅ Health check available at http://${host}:${port}/health`);
+  console.log(`✅ Root endpoint available at http://${host}:${port}/`);
+  console.log(`✅ Metrics available at http://${host}:${port}/metrics`);
+});

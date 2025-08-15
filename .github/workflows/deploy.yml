@@ -1,0 +1,42 @@
+name: Auto Deploy to EC2 with Blue-Green
+
+on:
+  push:
+    branches: [ main ]
+  workflow_run:
+    workflows: ["Build and Push Docker Image"]
+    types: [completed]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+    - name: Deploy to EC2
+      env:
+        PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+        HOST: ${{ secrets.EC2_HOST }}
+        USER: ${{ secrets.EC2_USER }}
+      run: |
+        echo "$PRIVATE_KEY" > private_key.pem
+        chmod 600 private_key.pem
+
+        ssh -o ConnectTimeout=30 \
+            -o ServerAliveInterval=60 \
+            -o ServerAliveCountMax=10 \
+            -o StrictHostKeyChecking=no \
+            -i private_key.pem ${USER}@${HOST} << 'EOF'
+          set -e
+          echo "✅ SSH 접속 성공"
+          cd ~/Onfit-Nodejs || exit 1
+
+          echo "🚀 Blue-Green 배포 시작"
+          ./deploy.sh
+
+          echo "📋 최종 상태 확인"
+          docker ps
+          curl -f http://localhost:80 || echo "❌ 헬스체크 실패"
+        EOF
+
+        rm -f private_key.pem
