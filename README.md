@@ -103,6 +103,10 @@ Onfit-Nodejs/
 ├── uploads/             # 업로드 파일
 ├── .github/workflows/   # CI/CD 설정
 └── Dockerfile          # Docker 설정
+```
+
+## 서버 아키텍처 다이어그램
+<img width="1086" height="1050" alt="Image" src="https://github.com/user-attachments/assets/dc19748d-68e9-4b7e-8f0c-04312f0b7fa6" />
 
 ## 👩‍💻팀원 정보
 - 김채연/몽모 (팀장)
