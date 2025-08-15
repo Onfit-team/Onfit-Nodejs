@@ -4,10 +4,17 @@ import cv2
 from PIL import Image
 from transformers import pipeline
 
+# Hugging Face 캐시 경로 (Dockerfile에서 ENV HF_HOME으로 설정)
 hf_home = os.getenv("HF_HOME", "/app/.cache/huggingface")
-hf_rmbg_dir = os.getenv("HF_RMBG_MODEL_PATH", os.path.join(hf_home, "hub", "models--briaai--RMBG-1.4"))
 
-pipe = pipeline("image-segmentation", model=hf_rmbg_dir, trust_remote_code=True, local_files_only=True)
+# RMBG 모델 로드 (절대경로 대신 repo_id 사용)
+pipe = pipeline(
+    "image-segmentation",
+    model="briaai/RMBG-1.4",
+    trust_remote_code=True,
+    cache_dir=hf_home,
+    local_files_only=True
+)
 
 def remove_background(input_path, output_path):
     rgba = pipe(input_path).convert("RGBA")
