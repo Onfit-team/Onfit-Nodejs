@@ -12,16 +12,6 @@ import OpenAI from "openai";
 const ONE_DAY = 86400;
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// 서버 시작 시 ONNX 모델 미리 로드
-(async () => {
-  try {
-    console.log("[RMBG] 초기화 시작");
-    await initOnnx();
-    console.log("[RMBG] 초기화 완료");
-  } catch (err) {
-    console.error("[RMBG] 초기화 실패:", err);
-  }
-})();
 
 /** 1. detect */
 export async function detectAndCache(userId, file) {
