@@ -18,7 +18,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
         transformers \
         opencv-python-headless \
         pillow \
-        numpy
+        numpy \
+        scikit-image
 
 # 4. Node.js 의존성
 COPY package*.json ./
