@@ -109,3 +109,6 @@ Onfit-Nodejs/
 - 장문선/도요
 - 김예빈/그린
 - 장유정/하늘
+
+-서버 아키텍처 다이어그램
+<img width="1086" height="1050" alt="image" src="https://github.com/user-attachments/assets/eb52dd3b-4a0f-4fac-945f-37dce8db34d1" />
