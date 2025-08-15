@@ -17,6 +17,8 @@ Onfit은 사용자가 자신의 옷장을 관리하고, 날씨와 상황에 맞�
  **Image Inpainting**: Stable Diffusion - 이미지 수정
  **Style Recommendation**: 규칙 기반 알고리즘 (색상/계절/태그 매칭)
 
+### 서버 아키텍처 구조
+<img width="1086" height="1050" alt="image" src="https://github.com/user-attachments/assets/4a1dc52e-5cc4-4296-a12b-3ddefe8dab5b" />
 
 ## 📌 Branch 전략
 # Branch	종류
