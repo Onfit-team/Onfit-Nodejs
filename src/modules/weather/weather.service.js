@@ -158,13 +158,28 @@ const buildCurrentWeatherResponse = (current, forecastList) => {
     ? Math.max(...todayForecasts.map(f => f.pop * 100))
     : 0;
 
+  //  수정된 부분: 오늘 하루 전체의 날씨 상태 수집 
+  let allWeatherToday;
+  if (todayForecasts.length > 0) {
+  // 오늘 하루 모든 예보의 날씨 상태를 수집
+  allWeatherToday = todayForecasts.flatMap(forecast => forecast.weather);
+  // 현재 날씨도 포함시킴
+  allWeatherToday = [...allWeatherToday, ...current.weather];
+  } else {
+  // 예보가 없으면 현재 날씨만 사용
+  allWeatherToday = current.weather;
+  }
+
+  // 오늘 하루 중 가장 악천후를 대표 날씨로 선택 (비 > 구름 > 맑음) 
+  const todayRepresentativeStatus = mapWeatherStatusWithPriority(allWeatherToday);
+
   return {
     tempAvg: Math.round(realTempAvg * 10) / 10, // 6시~23시 평균 온도
     tempMin: Math.round(todayMinTemp * 10) / 10,
     tempMax: Math.round(todayMaxTemp * 10) / 10,
     feelsLike: Math.round(current.main.feels_like * 10) / 10,
     precipitation: Math.round(maxPrecipitation),
-    status: mapWeatherStatusWithPriority(current.weather)
+    status: todayRepresentativeStatus
   };
 };
 
