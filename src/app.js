@@ -16,6 +16,7 @@ import locationRouter from "./routes/location.route.js";
 import communityRouter from './routes/community.route.js';
 
 import client from 'prom-client';
+import { initRMBG } from './utils/rmbg.js';
 
 // Prometheus 레지스터 생성
 const register = new client.Registry();
@@ -103,8 +104,11 @@ const host = process.env.HOST || '0.0.0.0';
 const port = process.env.PORT || 3000;
 
 app.listen(port, host, () => {
-  console.log(`✅ Server running on http://${host}:${port}`);
-  console.log(`✅ Health check available at http://${host}:${port}/health`);
-  console.log(`✅ Root endpoint available at http://${host}:${port}/`);
-  console.log(`✅ Metrics available at http://${host}:${port}/metrics`);
+  console.log(`Server running on http://${host}:${port}`);
+
+  if (process.env.SKIP_RMBG_INIT !== 'true') {
+    console.log('[RMBG] 백그라운드에서 모델 초기화 시작...');
+    initRMBG();
+  }
+
 });
