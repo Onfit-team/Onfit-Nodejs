@@ -17,6 +17,8 @@ RUN pip install --upgrade pip && \
 
 # ⭐ 모델 사전 다운로드 (이것만 추가!)
 RUN python -c "from transformers import pipeline; pipeline('image-segmentation', model='briaai/RMBG-1.4', trust_remote_code=True)"
+RUN python -c "from transformers import pipeline; pipeline('image-segmentation', model='briaai/RMBG-1.4', trust_remote_code=True)" && \
+    python -c "from diffusers import StableDiffusionInpaintPipeline; StableDiffusionInpaintPipeline.from_pretrained('runwayml/stable-diffusion-inpainting')"
 
 # Node.js 의존성 설치
 COPY package*.json ./

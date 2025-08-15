@@ -1,34 +1,29 @@
 import os
-import torch
-from diffusers import StableDiffusionInpaintPipeline
+import numpy as np
+import cv2
 from PIL import Image
+from transformers import pipeline
 
-# 모델 경로 설정
-hf_home = os.getenv("HF_HOME") or os.path.join(os.getcwd(), ".venv", "huggingface")
-MODEL_PATH = os.getenv("HF_INPAINT_MODEL_PATH", os.path.join(hf_home, "stable-diffusion-inpainting"))
+hf_home = os.getenv("HF_HOME", "/app/.cache/huggingface")
+hf_rmbg_dir = os.getenv("HF_RMBG_MODEL_PATH", os.path.join(hf_home, "hub", "models--briaai--RMBG-1.4"))
 
-# 디바이스 선택
-device = "cuda" if torch.cuda.is_available() else (
-    "mps" if getattr(torch.backends, "mps", None) and torch.backends.mps.is_available() else "cpu"
-)
+pipe = pipeline("image-segmentation", model=hf_rmbg_dir, trust_remote_code=True, local_files_only=True)
 
-print(f"[INFO] Loading Inpainting model from: {MODEL_PATH}")
-print(f"[INFO] Device: {device}")
+def remove_background(input_path, output_path):
+    rgba = pipe(input_path).convert("RGBA")
+    alpha = np.array(rgba.split()[-1])
+    blurred_alpha = cv2.GaussianBlur(alpha, (11, 11), 0)
 
-# 파이프라인 로드
-pipe = StableDiffusionInpaintPipeline.from_pretrained(
-    MODEL_PATH,
-    torch_dtype=torch.float16 if device == "cuda" else torch.float32,
-    safety_checker=None,
-    local_files_only=True,
-    use_safetensors=True
-).to(device)
+    np_rgba = np.array(rgba)
+    np_rgba[..., 3] = blurred_alpha
+    mask = np_rgba[..., 3] >= 245
+    np_rgba[~mask] = (0, 0, 0, 0)
 
-def inpaint_item(image_path: str, mask_path: str, output_path: str, prompt: str = "clean white background"):
-    """마스크 부분을 흰 배경으로 보정"""
-    image = Image.open(image_path).convert("RGB")
-    mask = Image.open(mask_path).convert("RGB")
+    Image.fromarray(np_rgba, mode="RGBA").save(output_path)
 
-    result = pipe(prompt=prompt, image=image, mask_image=mask).images[0]
-    result.save(output_path)
-    print(f"[OK] Inpainted image saved → {output_path}")
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) != 3:
+        print("Usage: python inference_rmbg.py <input> <output>")
+        sys.exit(1)
+    remove_background(sys.argv[1], sys.argv[2])
