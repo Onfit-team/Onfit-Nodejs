@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# 3. ⭐ Python 패키지 설치 (수정됨 - 따로따로 설치)
+# 3. ⭐ Python 패키지 설치 (ultralytics 추가)
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir \
@@ -19,7 +19,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
         opencv-python-headless \
         pillow \
         numpy \
-        scikit-image
+        scikit-image \
+        ultralytics
 
 # 4. Node.js 의존성
 COPY package*.json ./
