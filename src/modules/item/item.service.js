@@ -12,6 +12,12 @@ import { toFile } from "openai/uploads";
 const ONE_DAY = 86400;
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+/** 🕒 로그 헬퍼 (ISO 시간 + 메시지) */
+function logStep(message) {
+  const now = new Date().toISOString();
+  console.log(`[${now}] ${message}`);
+}
+
 /** 1. detect - YOLO 감지 후 crop + bbox + original 저장 */
 export async function detectAndCache(userId, file) {
   if (!file?.buffer) throw new InvalidInputError("이미지 파일이 필요합니다.");
@@ -43,7 +49,7 @@ export async function detectAndCache(userId, file) {
 
 /** 2. refine - RMBG + DALL·E 보정 */
 export const refineFromCrop = async (userId, cropId, promptOverride = null) => {
-  console.log(`[Refine] cropId=${cropId} 시작`);
+  logStep(`[Refine] cropId=${cropId} 시작`);
 
   const base64 = await redisClient.get(`crop:${userId}:${cropId}`);
   if (!base64) throw new NotExistsError("크롭 이미지를 찾을 수 없습니다.");
@@ -57,7 +63,7 @@ export const refineFromCrop = async (userId, cropId, promptOverride = null) => {
 
   try {
     // 1) 배경 제거
-    console.log("[Refine] RMBG 실행");
+    logStep("[Refine] RMBG 실행");
     const clothingMask = await removeBackground(cropBuffer);
 
     // 2) 마스크 추출
@@ -101,7 +107,7 @@ export const refineFromCrop = async (userId, cropId, promptOverride = null) => {
     const imageFile = await toFile(resizedForDalle, "image.png", { type: "image/png" });
     const maskFile = await toFile(editMask, "mask.png", { type: "image/png" });
 
-    console.log("[Refine] DALL·E 호출 시작");
+    logStep("[Refine] DALL·E 호출 시작");
 
     const dalleResponse = await openai.images.edit({
       model: "dall-e-2",
@@ -127,7 +133,7 @@ export const refineFromCrop = async (userId, cropId, promptOverride = null) => {
     await redisClient.setEx(`refined:${userId}:${refinedId}`, ONE_DAY, refinedBuffer.toString("base64"));
     uploadToS3(refinedBuffer, `final/${userId}/${refinedId}.png`).catch(console.error);
 
-    console.log(`[Refine] 완료 → refinedId=${refinedId}`);
+    logStep(`[Refine] 완료 → refinedId=${refinedId}`);
     return { refined_id: refinedId };
   } catch (error) {
     console.error("[Refine] 실패:", error.message);
@@ -137,7 +143,7 @@ export const refineFromCrop = async (userId, cropId, promptOverride = null) => {
 
 /** 2-B. 폴백 모드 */
 async function fallbackRefine(userId, cropId, cropBuffer) {
-  console.log("[Refine] 폴백 실행");
+  logStep("[Refine] 폴백 실행");
   const rmbgResult = await removeBackground(cropBuffer);
 
   const fallbackBuffer = await sharp(rmbgResult)
