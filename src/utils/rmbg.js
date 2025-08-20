@@ -36,40 +36,38 @@ pipeline('image-segmentation', model='briaai/RMBG-1.4', trust_remote_code=True)
 print("Model downloaded successfully")
 `;
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const py = spawn('python3', ['-c', modelCheckScript]);
-    
+
     py.stdout.on('data', (data) => {
       console.log('[RMBG]', data.toString().trim());
     });
-    
+
     py.stderr.on('data', (data) => {
       console.error('[RMBG Error]', data.toString().trim());
     });
-    
+
     py.on('close', (code) => {
       if (code === 0) {
         console.log('[RMBG] 모델 준비 완료');
-        resolve();
       } else {
         console.error('[RMBG] 모델 초기화 실패');
-        // 실패해도 서버는 계속 실행
-        resolve(); 
       }
+      // 실패해도 서버는 계속 실행
+      resolve();
     });
   });
 };
 
-// 배경 제거 함수
+// 배경 제거 함수 (Buffer 반환)
 export const removeBackground = async (buffer) => {
-  // 모델이 준비될 때까지 대기
   await ensureModelReady();
-  
+
   const inputPath = path.join(os.tmpdir(), `input-${Date.now()}.png`);
   const outputPath = path.join(os.tmpdir(), `output-${Date.now()}.png`);
-  
+
   await fs.promises.writeFile(inputPath, buffer);
-  
+
   const pythonScript = `
 import sys
 from PIL import Image
@@ -100,31 +98,30 @@ print("Done")
   return new Promise((resolve, reject) => {
     const tempScript = path.join(os.tmpdir(), `rmbg-${Date.now()}.py`);
     fs.writeFileSync(tempScript, pythonScript);
-    
+
     const py = spawn('python3', [tempScript, inputPath, outputPath]);
-    
+
     let stderr = '';
     py.stderr.on('data', (data) => {
       stderr += data.toString();
     });
-    
+
     py.on('close', async (code) => {
       // 임시 파일 정리
       fs.promises.unlink(tempScript).catch(() => {});
       fs.promises.unlink(inputPath).catch(() => {});
-      
+
       if (code === 0) {
         try {
           const result = await fs.promises.readFile(outputPath);
           fs.promises.unlink(outputPath).catch(() => {});
-          resolve(result);
+          resolve(result); // ✅ 무조건 Buffer 반환
         } catch (err) {
           reject(new Error('결과 파일 읽기 실패'));
         }
       } else {
         console.error('[RMBG] 실행 실패:', stderr);
-        // 실패 시 원본 반환
-        resolve(buffer);
+        resolve(buffer); // 실패 시 원본 반환
       }
     });
   });
@@ -132,7 +129,6 @@ print("Done")
 
 // 서버 시작 시 백그라운드에서 모델 다운로드
 export const initRMBG = () => {
-  // 비동기로 실행 (서버 시작을 막지 않음)
   ensureModelReady().catch(err => {
     console.error('[RMBG] 초기화 실패:', err);
   });
