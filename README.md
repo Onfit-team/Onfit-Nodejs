@@ -11,11 +11,27 @@ Onfit은 사용자가 자신의 옷장을 관리하고, 날씨와 상황에 맞�
 - 👗 **아웃핏 관리**: 개인별 아웃핏 저장 및 공유
 - 📅 **캘린더 연동**: 날짜별 코디 기록 및 관리
 - 🤖 **AI 활용**:
- **Object Detection**: YOLOv8 (Ultralytics) - 의류 객체 감지
- **Background Removal**: BRIA AI RMBG-1.4 - 배경 제거
- **Image Analysis**: OpenAI GPT-4 Vision - 의류 분류 및 분석
- **Image Inpainting**: Stable Diffusion - 이미지 수정
- **Style Recommendation**: 규칙 기반 알고리즘 (색상/계절/태그 매칭)
+  
+  - **Object Detection: YOLOv8 (Ultralytics)** - 의류 객체 감지 및 분류
+    - 상의, 하의, 원피스, 아우터, 신발, 액세서리 6개 카테고리 감지
+
+  - **Background Removal: BRIA AI RMBG-1.4 (HuggingFace)** - 의류 배경 제거
+    - 의류만 추출하여 깔끔한 크롭 이미지 생성
+  
+  - **Image Analysis: OpenAI GPT-4o-mini Vision** - 의류 상세 분석
+    - 카테고리, 서브카테고리, 색상, 계절 태깅
+    - 패턴 분석 (무늬, 프린트, 모티프 감지)
+    - 기장 분석 (스커트, 바지 길이 측정)
+    - 애매한 색상 재분석 (베이지/브라운, 레드/핑크, 오렌지/옐로우 구분)
+    
+  - **Image Generation: OpenAI DALL-E 3** - AI 기반 의류 이미지 생성
+    - 분석된 태그 정보를 바탕으로 고품질 상품 이미지 생성
+    - 전문적인 e-커머스 스타일 프롬프트 적용
+    
+  - **Pattern Recognition: OpenAI GPT-4o-mini Vision** - 패턴 및 모티프 인식
+    - 동물, 캐릭터, 과일 등 구체적인 모티프 식별
+    - 스트라이프, 체크, 플로럴 등 일반 패턴 분류
+    - 패턴 배치 및 개수 분석
 
 ### 서버 아키텍처 구조
 <img width="1086" height="1050" alt="image" src="https://github.com/user-attachments/assets/4a1dc52e-5cc4-4296-a12b-3ddefe8dab5b" />
