@@ -13,13 +13,18 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    # Redis 메모리 최적화
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   onfit-backend:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: onfit-backend
-    command: npm run dev   # nodemon 실행
+    command: npm run dev
     ports:
       - "3000:3000"
     env_file:
@@ -28,5 +33,20 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./:/app             # 호스트 → 컨테이너 소스 코드 동기화
-      - /app/node_modules   # 컨테이너 전용 node_modules 유지 (호스트 오염 방지)
+      # 개발 모드용 - 소스 코드만 동기화
+      - ./src:/app/src:ro  # 읽기 전용으로 마운트
+      - ./prisma:/app/prisma:ro
+      # 캐시 및 업로드 디렉토리는 호스트와 공유
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+      # node_modules는 컨테이너 전용 유지
+      - /app/node_modules
+    # 메모리 제한 설정
+    deploy:
+      resources:
+        limits:
+          memory: 4G  # AI 모델 로딩에 충분한 메모리
+    # 환경변수로 모델 다운로드 제어
+    environment:
+      - TRANSFORMERS_OFFLINE=1  # 오프라인 모드로 시작
+      - HF_DATASETS_OFFLINE=1
