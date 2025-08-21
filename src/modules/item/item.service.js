@@ -454,51 +454,74 @@ export const saveItem = async (userId, refinedId, outfitId = null) => {
 export const saveItem = async (userId, params, outfitId = null) => {
   let imageUrl;
   
-  // ✅ refinedId 또는 image_url 둘 다 지원
+  // refinedId 또는 image_url 둘 다 지원
   if (params.refinedId) {
-    // 기존 방식: refinedId로 Redis에서 URL 가져오기
     imageUrl = await redisClient.get(`refined:${userId}:${params.refinedId}:url`);
     if (!imageUrl) throw new NotExistsError("리파인 이미지가 만료되었습니다.");
   } else if (params.image_url) {
-    // 새 방식: image_url 직접 사용
     imageUrl = params.image_url;
   } else {
     throw new InvalidInputError("refinedId 또는 image_url이 필요합니다.");
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    // 1. Item 저장
-    const item = await tx.item.create({
-      data: {
-        userId,
-        image: imageUrl,  // URL 직접 사용
-        category: 0,
-        subcategory: 0,
-        brand: null,
-        color: 0,
-        size: null,
-        season: 0,
-        purchaseDate: null,
-        isDeleted: false,
-      }
-    });
+  // ✅ outfitId가 있으면 트랜잭션 사용, 없으면 단순 저장
+  let result;
 
-    // 2. outfitId가 있으면 OutfitItem에도 연결
-    if (outfitId) {
+  if (outfitId) {
+    // 트랜잭션으로 Item 저장 + OutfitItem 연결
+    result = await prisma.$transaction(async (tx) => {
+      // 1. Item 저장 (itemRepository 로직 참고)
+      const item = await tx.item.create({
+        data: {
+          image: imageUrl,
+          category: 0,
+          subcategory: 0,
+          brand: null,
+          color: 0,
+          size: null,
+          season: 0,
+          purchaseDate: null,
+          isDeleted: false,
+          user: {
+            connect: { id: userId }  // itemRepository와 동일한 방식
+          }
+        }
+      });
+
+      // 2. outfit이 본인 것인지 확인 후 연결
       const outfit = await tx.outfit.findFirst({
         where: { id: outfitId, userId: userId }
       });
 
       if (outfit) {
         await tx.outfitItem.create({
-          data: { outfitId: outfitId, itemId: item.id }
+          data: { 
+            outfitId: outfitId, 
+            itemId: item.id 
+          }
         });
         console.log(`✅ Item ${item.id} connected to Outfit ${outfitId}`);
+      } else {
+        console.warn(`⚠️ Outfit ${outfitId} not found or not owned by user ${userId}`);
       }
-    }
 
-    return item;
-  });
+      return item;
+    });
+  } else {
+    // outfitId가 없으면 itemRepository 사용
+    result = await itemRepository.create({
+      userId,
+      image: imageUrl,
+      category: 0,
+      subcategory: 0,
+      brand: null,
+      color: 0,
+      size: null,
+      season: 0,
+      purchaseDate: null,
+      isDeleted: false,
+    });
+  }
 
   return { id: result.id, image_url: imageUrl };
 };
