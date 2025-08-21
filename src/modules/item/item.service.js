@@ -225,7 +225,7 @@ export async function detectAndCache(userId, file) {
       // 1차 태그 분석 (category, subcategory, color, season)
       const basicTags = await analyzeImage(tmpPath);
 
-      // ✅ 애매한 색상 재분석 (4,6,7)
+      // 애매한 색상 재분석 (4,6,7)
       let correctedTags = { ...basicTags };
       if ([4, 6, 7].includes(basicTags.color)) {
         console.log(`🎨 Refining ambiguous color ${basicTags.color}...`);
@@ -347,7 +347,7 @@ export const refineFromCrop = async (userId, cropId) => {
   const mergedTags = {
     ...tags, // 기존 tags (category, subcategory, color, season 등)
     pattern, // 새로 분석된 패턴 정보
-    ...(lengthInfo ? { length: lengthInfo } : {}) // ✅ 기장 정보 추가
+    ...(lengthInfo ? { length: lengthInfo } : {}) // 기장 정보 추가
   };
   
   console.log("🔍 [refineFromCrop] Before refineTags - merged:", JSON.stringify(mergedTags, null, 2));
@@ -372,7 +372,7 @@ export const refineFromCrop = async (userId, cropId) => {
   refined.subcategoryName =
     subcategoryMap[`${refined.category}:${refined.subcategory}`] ?? "unknown";
 
-  // 7) Prompt 생성 - ✅ refined 객체 전체를 전달하여 color 정보 포함
+  // 7) Prompt 생성 - refined 객체 전체를 전달하여 color 정보 포함
   let prompt = buildPromptFromJson(refined, refined.pattern);
 
   console.log("📊 [Pattern Final]:", pattern);
