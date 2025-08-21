@@ -28,7 +28,7 @@ export const refineItem = async (req, res, next) => {
     next(err);
   }
 };
-
+/*
 export const saveItem = async (req, res, next) => {
   try {
     const userId = req.user?.userId;
@@ -39,6 +39,28 @@ export const saveItem = async (req, res, next) => {
 
     const result = await itemService.saveItem(userId, refinedId, outfitId);
     res.status(200).json(new OkSuccess(result, "저장 성공"));
+  } catch (err) {
+    next(err);
+  }
+};
+*/
+export const saveItem = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) throw new CustomError("로그인이 필요합니다", "UNAUTHORIZED", 401);
+    
+    const { refinedId, image_url, outfitId } = req.body;
+    
+    // ✅ refinedId 또는 image_url 중 하나는 있어야 함
+    if (!refinedId && !image_url) {
+      throw new InvalidInputError("refinedId 또는 image_url이 필요합니다.");
+    }
+
+    const params = refinedId ? { refinedId } : { image_url };
+    const result = await itemService.saveItem(userId, params, outfitId);
+    
+    const message = outfitId ? "아이템 저장 및 아웃핏 연결 성공" : "아이템 저장 성공";
+    res.status(200).json(new OkSuccess(result, message));
   } catch (err) {
     next(err);
   }
