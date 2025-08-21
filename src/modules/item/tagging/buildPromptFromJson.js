@@ -6,7 +6,7 @@ export function buildPromptFromJson(tags, pattern) {
   const subcategory =
     subcategoryMap[subKey] || tags.subcategoryName || category;
 
-  // 색상 매핑 로직 단순화
+  // ✅ 색상 매핑 로직 단순화
   // 재분석된 색상들: 4=beige, 5=brown, 6=red, 7=pink, 8=orange, 9=yellow
   // 원래 색상들: 1=white, 2=black, 3=gray, 5=navy/blue, 8=green, 9=purple, 10=multi/pattern
   
@@ -44,7 +44,7 @@ export function buildPromptFromJson(tags, pattern) {
   console.log("🎨 [Color Debug] tags.color:", tags.color);
   console.log("🎨 [Color Debug] colorMap result:", color);
 
-  // patternDescription을 motif 개수/배치에 따라 더 구체적으로 처리
+  // ✅ patternDescription을 motif 개수/배치에 따라 더 구체적으로 처리
   let patternDesc = "";
   
   // 1순위: pattern parameter의 patternDescription
@@ -142,12 +142,12 @@ export function buildPromptFromJson(tags, pattern) {
     patternDesc = "solid fabric";
   }
 
-  // 디버그 로그 추가
+  // ✅ 디버그 로그 추가
   console.log("🔍 [buildPromptFromJson] pattern parameter:", JSON.stringify(pattern, null, 2));
   console.log("🔍 [buildPromptFromJson] tags.pattern:", JSON.stringify(tags.pattern, null, 2));
   console.log("🔍 [buildPromptFromJson] final patternDesc:", patternDesc);
 
-  // 색상을 더 강조하여 프롬프트 구성 개선
+  // ✅ 색상을 더 강조하여 프롬프트 구성 개선
   let colorDesc = "";
   if (color && color.trim() !== "") {
     // multi/pattern인 경우 처리
@@ -167,7 +167,7 @@ export function buildPromptFromJson(tags, pattern) {
   // 기본 설명 구성 - 색상을 더 명확히 포함
   let baseDesc = [colorDesc, subcategory].filter(Boolean).join(" ");
   
-  // 기장 정보가 있으면 subcategory를 더 구체적으로 수정
+  // ✅ 기장 정보가 있으면 subcategory를 더 구체적으로 수정
   if (tags.length && tags.length.length) {
     const lengthDesc = tags.length.length;
     
@@ -201,9 +201,9 @@ export function buildPromptFromJson(tags, pattern) {
   const parts = [
     `A professional e-commerce style product photo of a ${baseDesc}`,
     `made from ${patternDesc}`,
-    // 색상 정확성을 강조하는 부분 추가
+    // ✅ 색상 정확성을 강조하는 부분 추가
     color && color !== "multi/pattern" ? `ensure the ${color} color is accurate and vibrant` : "",
-    // 레이아웃 및 배치 제약사항 강화
+    // ✅ 레이아웃 및 배치 제약사항 강화
     "SINGLE GARMENT ONLY: only one piece of clothing visible",
     "FRONT VIEW ONLY: only the front side visible, no back view, no side view",
     "COMPLETELY FLAT AND SMOOTH: no wrinkles, no creases, no folds, perfectly ironed appearance",

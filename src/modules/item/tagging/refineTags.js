@@ -29,7 +29,7 @@ export function refineTags(tags) {
     const patternType = refined.pattern.patternType || "none";
     const layout = refined.pattern.layout || "plain";
     const count = refined.pattern.count || 1;
-    // 핵심: patternDescription 무조건 보존
+    // ✅ 핵심: patternDescription 무조건 보존
     const patternDescription = refined.pattern.patternDescription || "";
     const confidence = refined.pattern.confidence || 0.5;
 
@@ -62,24 +62,27 @@ export function refineTags(tags) {
       }
     }
 
-    // pattern 객체 재구성 시 모든 필드 보존
+    // ✅ pattern 객체 재구성 시 모든 필드 보존
     refined.pattern = {
       patternType,
       layout: finalLayout,
       count,
-      patternDescription, // 반드시 유지
-      confidence, // confidence도 보존
+      patternDescription, // ✅ 반드시 유지
+      confidence, // ✅ confidence도 보존
       patternName: patternType === "motif" ? extractPatternName(patternDescription) : null,
     };
+
+    // ✅ 디버그 로그 추가
+    console.log("🔍 [refineTags] patternDescription preserved:", patternDescription);
   }
 
-  // 전체 refined 객체 반환 (color, category, subcategory 등 모든 정보 포함)
+  // ✅ 전체 refined 객체 반환 (color, category, subcategory 등 모든 정보 포함)
   console.log("🔍 [refineTags] returning full tags:", JSON.stringify(refined, null, 2));
   return refined;
 }
 
 /**
- * 카테고리/서브카테고리 보정 - pattern 객체 및 color 정보 보존하도록 수정
+ * 카테고리/서브카테고리 보정 - ✅ pattern 객체 및 color 정보 보존하도록 수정
  */
 export function refineCategorySub(tags, bboxOrRatio = null) {
   let category = tags.category;
@@ -168,13 +171,19 @@ export function refineCategorySub(tags, bboxOrRatio = null) {
 
   const subcategoryName = subcategoryMap[`${category}:${sub}`] || "unknown";
   
-  // 기존 tags의 모든 속성 보존하면서 카테고리 정보만 업데이트
+  // ✅ 핵심: 기존 tags의 모든 속성 보존하면서 카테고리 정보만 업데이트
   const result = { 
-    ...tags, // color, season, pattern 등 모든 기존 태그 보존
+    ...tags, // ✅ color, season, pattern 등 모든 기존 태그 보존
     category, 
     subcategory: sub, 
     subcategoryName 
   };
-
+  
+  // ✅ 디버그 로그 추가
+  console.log("🔍 [refineCategorySub] input tags:", JSON.stringify(tags, null, 2));
+  console.log("🔍 [refineCategorySub] input color:", tags.color);
+  console.log("🔍 [refineCategorySub] returning result:", JSON.stringify(result, null, 2));
+  console.log("🔍 [refineCategorySub] returning color:", result.color);
+  
   return result;
 }

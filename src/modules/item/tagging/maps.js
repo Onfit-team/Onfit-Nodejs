@@ -1,3 +1,5 @@
+// src/modules/item/tagging/maps.js
+
 // motif dictionary (fruit, animal, character, object)
 export const motifDictionary = {
   fruit: {
