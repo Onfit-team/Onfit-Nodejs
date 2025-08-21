@@ -33,10 +33,11 @@ export const saveItem = async (req, res, next) => {
   try {
     const userId = req.user?.userId;
     if (!userId) throw new CustomError("로그인이 필요합니다", "UNAUTHORIZED", 401);
-    const { refinedId } = req.body;
+    
+    const { refinedId, outfitId } = req.body;
     if (!refinedId) throw new InvalidInputError("refinedId가 필요합니다.");
 
-    const result = await itemService.saveItem(userId, refinedId);
+    const result = await itemService.saveItem(userId, refinedId, outfitId);
     res.status(200).json(new OkSuccess(result, "저장 성공"));
   } catch (err) {
     next(err);
