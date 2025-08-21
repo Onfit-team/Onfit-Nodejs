@@ -115,7 +115,7 @@ print("Done")
         try {
           const result = await fs.promises.readFile(outputPath);
           fs.promises.unlink(outputPath).catch(() => {});
-          resolve(result); // ✅ 무조건 Buffer 반환
+          resolve(result); // 무조건 Buffer 반환
         } catch (err) {
           reject(new Error('결과 파일 읽기 실패'));
         }

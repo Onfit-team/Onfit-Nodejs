@@ -41,7 +41,7 @@ for box in results.boxes:
     kor_class = category_map.get(eng_class, "unknown")
 
     output.append({
-        "label": class_id,       # 🔥 숫자 라벨 추가
+        "label": class_id,       # 숫자 라벨 추가
         "eng_class": eng_class,  # (옵션) 영문 카테고리
         "category": kor_class,   # 한글 카테고리
         "bbox": xyxy
