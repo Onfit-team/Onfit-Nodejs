@@ -1,4 +1,3 @@
-// src/modules/item/tagging/analyzePattern.js
 import OpenAI from "openai";
 import fs from "fs";
 import path from "path";

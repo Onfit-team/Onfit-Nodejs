@@ -1,9 +1,0 @@
-fastapi
-uvicorn
-pillow
-transformers>=4.44.0
-safetensors
-numpy
-scikit-image
-diffusers==0.30.0
-accelerate
