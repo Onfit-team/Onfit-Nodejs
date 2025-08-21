@@ -6,9 +6,17 @@ const { sql } = Prisma;
 export const calendarRepository = {
   // Outfit 하나 조회
   async findById(id) {
-    return await prisma.outfit.findUnique({
-      where: { id: parseInt(id) },
-    });
+    try {
+      console.log('🔍 [Repository] findById 호출, id:', id, 'type:', typeof id);
+      const result = await prisma.outfit.findUnique({
+        where: { id: parseInt(id) },
+      });
+      console.log('🔍 [Repository] findById 결과:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ [Repository] findById 에러:', error);
+      throw error;
+    }
   },
 
   // 가장 많이 등록된 style 태그 1개만 반환
@@ -59,15 +67,38 @@ export const calendarRepository = {
 
   // Outfit 삭제
   async deleteById(id) {
-    return await prisma.$transaction(async (tx) => {
-      // 먼저 OutfitTag 테이블의 연관 데이터 삭제
-      await tx.outfitTag.deleteMany({
-        where: { outfitId: parseInt(id) }
+    try {
+      console.log('🔍 [Repository] deleteById 시작, id:', id, 'type:', typeof id);
+      console.log('🔍 [Repository] parseInt(id):', parseInt(id));
+      
+      const result = await prisma.$transaction(async (tx) => {
+        console.log('🔍 [Repository] 트랜잭션 시작');
+        
+        // 먼저 OutfitTag 테이블의 연관 데이터 삭제
+        console.log('🔍 [Repository] OutfitTag 삭제 시작');
+        const deletedTags = await tx.outfitTag.deleteMany({
+          where: { outfitId: parseInt(id) }
+        });
+        console.log('✅ [Repository] OutfitTag 삭제 완료, 삭제된 개수:', deletedTags.count);
+        
+        // 마지막으로 Outfit 삭제
+        console.log('🔍 [Repository] Outfit 삭제 시작');
+        const deletedOutfit = await tx.outfit.delete({
+          where: { id: parseInt(id) }
+        });
+        console.log('✅ [Repository] Outfit 삭제 완료:', deletedOutfit);
+        
+        return deletedOutfit;
       });
-      // 마지막으로 Outfit 삭제
-      return await tx.outfit.delete({
-        where: { id: parseInt(id) }
-      });
-    });
+      
+      console.log('✅ [Repository] deleteById 트랜잭션 완료, 최종 결과:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ [Repository] deleteById 에러:', error);
+      console.error('❌ [Repository] 에러 코드:', error.code);
+      console.error('❌ [Repository] 에러 메타:', error.meta);
+      console.error('❌ [Repository] 에러 스택:', error.stack);
+      throw error;
+    }
   },
 };
