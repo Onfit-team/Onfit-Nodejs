@@ -65,16 +65,45 @@ export const modifyOutfit = async (id, update) => {
 };
 
 export const removeOutfit = async (id) => {
-  const exists = await calendarRepository.existsById(id);
-  if (!exists) throw new NotExistsError("해당 Outfit이 없습니다.");
+  try {
+    console.log('🔍 [Service] removeOutfit 시작, id:', id, 'type:', typeof id);
+    
+    console.log('🔍 [Service] existsById 호출 전');
+    const exists = await calendarRepository.existsById(id);
+    console.log('🔍 [Service] outfit 존재 여부:', exists);
+    
+    if (!exists) {
+      console.log('❌ [Service] Outfit이 존재하지 않음');
+      throw new NotExistsError("해당 Outfit이 없습니다.");
+    }
 
-  const folderPath = path.join(process.cwd(), 'uploads', String(id));
-  if (fs.existsSync(folderPath)) {
-    fs.rmSync(folderPath, { recursive: true, force: true });
+    console.log('🔍 [Service] 파일 시스템 정리 시작');
+    const folderPath = path.join(process.cwd(), 'uploads', String(id));
+    console.log('🔍 [Service] 폴더 경로:', folderPath);
+    
+    if (fs.existsSync(folderPath)) {
+      console.log('🔍 [Service] 폴더 존재함, 삭제 진행');
+      fs.rmSync(folderPath, { recursive: true, force: true });
+      console.log('✅ [Service] 폴더 삭제 완료');
+    } else {
+      console.log('📁 [Service] 폴더 존재하지 않음');
+    }
+
+    console.log('🔍 [Service] DB 삭제 시작');
+    const result = await calendarRepository.deleteById(id);
+    console.log('✅ [Service] DB 삭제 완료, result:', result);
+    
+    const response = { detail: `${id}번 Outfit이 삭제되었습니다.` };
+    console.log('✅ [Service] removeOutfit 완료, response:', response);
+    
+    return response;
+  } catch (error) {
+    console.error('❌ [Service] removeOutfit 에러:', error);
+    console.error('❌ [Service] 에러 타입:', error.constructor.name);
+    console.error('❌ [Service] 에러 메시지:', error.message);
+    console.error('❌ [Service] 에러 스택:', error.stack);
+    throw error;
   }
-
-  await calendarRepository.deleteById(id);
-  return { detail: `${id}번 Outfit이 삭제되었습니다.` };
 };
 
 export const updateFeelsLikeTemp = async (id, feelsLikeTemp) => {

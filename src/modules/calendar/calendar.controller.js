@@ -41,13 +41,23 @@ export const updateOutfit = async (req, res, next) => {
   }
 };
 
-
 export const deleteOutfit = async (req, res, next) => {
   try {
+    console.log('🔍 [Controller] DELETE OUTFIT 호출됨');
+    console.log('🔍 [Controller] params:', req.params);
+    console.log('🔍 [Controller] user:', req.user);
+    console.log('🔍 [Controller] headers:', req.headers.authorization);
+    
     const { outfit_id } = req.params;
+    console.log('🔍 [Controller] outfit_id:', outfit_id, 'type:', typeof outfit_id);
+    
     const result = await calendarService.removeOutfit(outfit_id);
+    console.log('🔍 [Controller] 삭제 성공:', result);
+    
     res.status(200).json(new OkSuccess(result, "코디 삭제 성공"));
   } catch (err) {
+    console.error('❌ [Controller] DELETE OUTFIT 에러:', err);
+    console.error('❌ [Controller] 에러 스택:', err.stack);
     next(err);
   }
 };
