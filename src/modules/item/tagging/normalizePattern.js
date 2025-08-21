@@ -1,5 +1,3 @@
-// src/modules/item/tagging/normalizePattern.js
-
 // 패턴 사전
 const patternDict = {
   // stripe 계열
