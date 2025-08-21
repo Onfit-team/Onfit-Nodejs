@@ -1,3 +1,4 @@
+// src/modules/item/item.service.js
 import sharp from "sharp";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
@@ -12,11 +13,11 @@ import { InvalidInputError, NotExistsError } from "../../utils/error.js";
 import { runYolo } from "../../utils/yolo.js";
 import { removeBackground } from "../../utils/rmbg.js";
 import { analyzeImage } from "../wardrobe/openai.js";
-import { analyzePattern } from "./tagging/analyzePattern.js";   // 패턴 분석 모듈
-import { analyzeLength } from "./tagging/analyzeLength.js";   // 기장 분석 모듈
-import { refineTags, refineCategorySub } from "./tagging/refineTags.js"; // 태그 후처리 + 카테고리/서브카테고리 보정
-import { buildPromptFromJson } from "./tagging/buildPromptFromJson.js"; // 프롬프트 빌더
-import { categoryMap, subcategoryMap, colorMap, seasonMap } from "./tagging/maps.js"; // 공용 매핑
+import { analyzePattern } from "./tagging/analyzePattern.js";   // ✅ 패턴 분석 모듈
+import { analyzeLength } from "./tagging/analyzeLength.js";   // ✅ 기장 분석 모듈
+import { refineTags, refineCategorySub } from "./tagging/refineTags.js"; // ✅ 태그 후처리 + 카테고리/서브카테고리 보정
+import { buildPromptFromJson } from "./tagging/buildPromptFromJson.js"; // ✅ 프롬프트 빌더
+import { categoryMap, subcategoryMap, colorMap, seasonMap } from "./tagging/maps.js"; // ✅ 공용 매핑
 import OpenAI from "openai";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -322,7 +323,7 @@ export const refineFromCrop = async (userId, cropId) => {
   fs.writeFileSync(tmpPath, withWhiteBG);
   const pattern = await analyzePattern(tmpPath);
   
-  // color가 10인 경우 재분석
+  // ✅ color가 10인 경우 재분석
   if (tags.color === 10) {
     console.log("⚠️ Color 10 (multi/pattern) in refine stage, re-analyzing...");
     const baseColor = await analyzeBaseColor(tmpPath);
@@ -330,7 +331,7 @@ export const refineFromCrop = async (userId, cropId) => {
     console.log(`✅ Re-analyzed color in refine: ${baseColor}`);
   }
   
-  // 기장 분석이 필요한 subcategory 체크
+  // ✅ 기장 분석이 필요한 subcategory 체크
   const needsLengthAnalysis = [3, 4, 5, 6]; // jeans, training pants, leggings, skirt
   let lengthInfo = null;
   
@@ -363,7 +364,7 @@ export const refineFromCrop = async (userId, cropId) => {
   });
   console.log("🔍 [refineFromCrop] After refineCategorySub:", JSON.stringify(refined, null, 2));
 
-  // 디버그 로그 추가
+  // ✅ 디버그 로그 추가
   console.log("DEBUG patternDescription after refine:", refined.pattern?.patternDescription);
   console.log("DEBUG color after refine:", refined.color);
   console.log("DEBUG colorMap result:", colorMap[refined.color]);

@@ -91,7 +91,7 @@ export function refineCategorySub(tags, bboxOrRatio = null) {
 
   const subcategoryName = subcategoryMap[`${category}:${sub}`] || "unknown";
   
-  // 기존 tags의 모든 속성을 보존하면서 카테고리 정보만 업데이트
+  // ✅ 핵심: 기존 tags의 모든 속성을 보존하면서 카테고리 정보만 업데이트
   const result = { 
     ...tags, // color, season, pattern, length 등 모든 기존 태그 보존
     category, 
