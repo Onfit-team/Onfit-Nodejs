@@ -19,6 +19,8 @@ import { refineTags, refineCategorySub } from "./tagging/refineTags.js"; // ✅ 
 import { buildPromptFromJson } from "./tagging/buildPromptFromJson.js"; // ✅ 프롬프트 빌더
 import { categoryMap, subcategoryMap, colorMap, seasonMap } from "./tagging/maps.js"; // ✅ 공용 매핑
 import OpenAI from "openai";
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
