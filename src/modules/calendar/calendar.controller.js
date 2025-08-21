@@ -41,7 +41,6 @@ export const updateOutfit = async (req, res, next) => {
   }
 };
 
-
 export const deleteOutfit = async (req, res, next) => {
   try {
     const { outfit_id } = req.params;

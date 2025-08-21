@@ -59,8 +59,24 @@ export const calendarRepository = {
 
   // Outfit 삭제
   async deleteById(id) {
-    return await prisma.outfit.delete({
-      where: { id: parseInt(id) },
+    return await prisma.$transaction(async (tx) => {
+      // 관련 데이터 순차 삭제
+      await tx.outfitTag.deleteMany({
+        where: { outfitId: parseInt(id) }
+      });
+      
+      await tx.outfitItem.deleteMany({
+        where: { outfitId: parseInt(id) }
+      });
+      
+      await tx.outfitLike.deleteMany({
+        where: { outfitId: parseInt(id) }
+      });
+      
+      // 마지막으로 Outfit 삭제
+      return await tx.outfit.delete({
+        where: { id: parseInt(id) }
+      });
     });
   },
 };

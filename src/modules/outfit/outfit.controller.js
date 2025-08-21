@@ -62,3 +62,37 @@ export const checkTodayOutfit = async (req, res, next) => {
     next(err);
   }
 };
+
+// 개발 모드 상태 확인 API (프론트엔드용)
+export const getDevModeStatus = async (req, res, next) => {
+  try {
+    const isDevMode = process.env.DEV_MODE === 'true';
+    res.status(200).json(new OkSuccess({ 
+      devMode: isDevMode,
+      message: isDevMode ? "개발 모드가 활성화되어 있습니다." : "일반 모드입니다."
+    }, "개발 모드 상태 조회 성공"));
+  } catch (err) {
+    next(new InvalidInputError("개발 모드 상태 조회 실패", err.message));
+  }
+};
+
+// 개발 모드 토글 API (프론트엔드용)
+export const toggleDevMode = async (req, res, next) => {
+  try {
+    const { enable } = req.body;
+    
+    if (typeof enable !== 'boolean') {
+      throw new InvalidInputError("enable 파라미터는 boolean 값이어야 합니다.");
+    }
+    
+    // 환경변수 변경 (메모리에서만)
+    process.env.DEV_MODE = enable.toString();
+    
+    res.status(200).json(new OkSuccess({ 
+      devMode: enable,
+      message: enable ? "개발 모드가 활성화되었습니다." : "일반 모드로 변경되었습니다."
+    }, "개발 모드 토글 성공"));
+  } catch (err) {
+    next(new InvalidInputError("개발 모드 토글 실패", err.message));
+  }
+};

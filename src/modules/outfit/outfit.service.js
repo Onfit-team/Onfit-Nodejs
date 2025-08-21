@@ -154,7 +154,10 @@ export async function createOutfit(outfitData) {
   });
   
 
-  if (existingOutfit) {
+  // 개발 모드에서 일일 제한 해제 (환경변수로 제어)
+  const isDevMode = process.env.DEV_MODE === 'true';
+  
+  if (existingOutfit && !isDevMode) {
     throw new Error('이미 해당 날짜에 등록된 코디가 있습니다. 하루에 하나의 코디만 등록할 수 있습니다.');
   }
 

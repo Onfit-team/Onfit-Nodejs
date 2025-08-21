@@ -170,7 +170,10 @@ export const getTodayOutfitStatus = async (userId) => {
     };
   }
 
-  if (todayOutfit.isPublished) {
+  // 개발 모드에서 커뮤니티 등록 제한 해제 (환경변수로 제어)
+  const isDevMode = process.env.DEV_MODE === 'true';
+  
+  if (todayOutfit.isPublished && !isDevMode) {
     return {
       canPublish: false,
       reason: "ALREADY_PUBLISHED"
@@ -220,7 +223,10 @@ export const publishTodayOutfitToCommunity = async (userId) => {
     throw new CustomError('오늘 등록한 아웃핏이 없습니다.', 404, 'NO_TODAY_OUTFIT');
   }
 
-  if (todayOutfit.isPublished) {
+  // 개발 모드에서 커뮤니티 등록 제한 해제 (환경변수로 제어)
+  const isDevMode = process.env.DEV_MODE === 'true';
+  
+  if (todayOutfit.isPublished && !isDevMode) {
     throw new CustomError('오늘의 아웃핏이 이미 커뮤니티에 공개되었습니다.', 400, 'ALREADY_PUBLISHED');
   }
 
@@ -316,8 +322,11 @@ export const checkIfTodayOutfitCanBeShared = async (userId) => {
       };
     }
 
+    // 개발 모드에서 커뮤니티 등록 제한 해제 (환경변수로 제어)
+    const isDevMode = process.env.DEV_MODE === 'true';
+    
     // 오늘 아웃핏이 있지만 이미 공유된 경우
-    if (todayOutfit.isPublished) {
+    if (todayOutfit.isPublished && !isDevMode) {
       return {
         canShare: false,
         reason: 'ALREADY_PUBLISHED',
