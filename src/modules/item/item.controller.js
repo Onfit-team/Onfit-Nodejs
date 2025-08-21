@@ -49,17 +49,39 @@ export const saveItem = async (req, res, next) => {
     const userId = req.user?.userId;
     if (!userId) throw new CustomError("로그인이 필요합니다", "UNAUTHORIZED", 401);
     
-    const { refinedId, image_url, outfitId } = req.body;
+    const { refinedId, image_url, items, outfitId } = req.body;
     
-    // ✅ refinedId 또는 image_url 중 하나는 있어야 함
-    if (!refinedId && !image_url) {
-      throw new InvalidInputError("refinedId 또는 image_url이 필요합니다.");
+    // ✅ 유효성 검증
+    if (!refinedId && !image_url && (!items || !Array.isArray(items))) {
+      throw new InvalidInputError("refinedId, image_url 또는 items 배열이 필요합니다.");
     }
 
-    const params = refinedId ? { refinedId } : { image_url };
-    const result = await itemService.saveItem(userId, params, outfitId);
+    // ✅ 요청 데이터 준비
+    let requestData;
+    if (items && Array.isArray(items)) {
+      // 배열 방식: { items: [...], outfitId: 123 }
+      requestData = { items };
+    } else {
+      // 단일 방식: { refinedId: "...", outfitId: 123 } 또는 { image_url: "...", outfitId: 123 }
+      requestData = refinedId ? { refinedId } : { image_url };
+    }
+
+    const result = await itemService.saveItem(userId, requestData, outfitId);
     
-    const message = outfitId ? "아이템 저장 및 아웃핏 연결 성공" : "아이템 저장 성공";
+    // ✅ 응답 메시지
+    let message;
+    if (result.savedCount) {
+      // 배열 응답
+      message = outfitId 
+        ? `${result.savedCount}개 아이템 저장 및 아웃핏 연결 성공` 
+        : `${result.savedCount}개 아이템 저장 성공`;
+    } else {
+      // 단일 응답
+      message = outfitId 
+        ? "아이템 저장 및 아웃핏 연결 성공" 
+        : "아이템 저장 성공";
+    }
+    
     res.status(200).json(new OkSuccess(result, message));
   } catch (err) {
     next(err);

@@ -451,79 +451,124 @@ export const saveItem = async (userId, refinedId, outfitId = null) => {
 };
 */
 
-export const saveItem = async (userId, params, outfitId = null) => {
-  let imageUrl;
+export const saveItem = async (userId, requestData, outfitId = null) => {
+  // ✅ 단일 아이템인지 배열인지 판단
+  let itemsToProcess = [];
   
-  // refinedId 또는 image_url 둘 다 지원
-  if (params.refinedId) {
-    imageUrl = await redisClient.get(`refined:${userId}:${params.refinedId}:url`);
-    if (!imageUrl) throw new NotExistsError("리파인 이미지가 만료되었습니다.");
-  } else if (params.image_url) {
-    imageUrl = params.image_url;
+  if (requestData.items && Array.isArray(requestData.items)) {
+    // 배열 형태: { items: [...], outfitId: 123 }
+    itemsToProcess = requestData.items;
   } else {
-    throw new InvalidInputError("refinedId 또는 image_url이 필요합니다.");
+    // 단일 형태: { image_url: "...", outfitId: 123 } 또는 { refinedId: "...", outfitId: 123 }
+    itemsToProcess = [requestData];
   }
 
-  // ✅ outfitId가 있으면 트랜잭션 사용, 없으면 단순 저장
-  let result;
+  if (itemsToProcess.length === 0) {
+    throw new InvalidInputError("저장할 아이템이 없습니다.");
+  }
 
-  if (outfitId) {
-    // 트랜잭션으로 Item 저장 + OutfitItem 연결
-    result = await prisma.$transaction(async (tx) => {
-      // 1. Item 저장 (itemRepository 로직 참고)
-      const item = await tx.item.create({
-        data: {
-          image: imageUrl,
-          category: 0,
-          subcategory: 0,
-          brand: null,
-          color: 0,
-          size: null,
-          season: 0,
-          purchaseDate: null,
-          isDeleted: false,
-          user: {
-            connect: { id: userId }  // itemRepository와 동일한 방식
-          }
-        }
-      });
+  // 이미지 URL들 준비
+  const processedItems = [];
+  
+  for (const itemData of itemsToProcess) {
+    let imageUrl;
+    
+    if (itemData.refinedId) {
+      imageUrl = await redisClient.get(`refined:${userId}:${itemData.refinedId}:url`);
+      if (!imageUrl) {
+        console.warn(`⚠️ Refined ID ${itemData.refinedId} expired, skipping...`);
+        continue;
+      }
+    } else if (itemData.image_url) {
+      imageUrl = itemData.image_url;
+    } else {
+      console.warn(`⚠️ Invalid item data:`, itemData);
+      continue;
+    }
 
-      // 2. outfit이 본인 것인지 확인 후 연결
+    processedItems.push({
+      ...itemData,
+      imageUrl
+    });
+  }
+
+  if (processedItems.length === 0) {
+    throw new InvalidInputError("처리 가능한 아이템이 없습니다.");
+  }
+
+  // ✅ 트랜잭션으로 아이템(들) 저장
+  const result = await prisma.$transaction(async (tx) => {
+    const savedItems = [];
+
+    // 1. outfitId가 있으면 outfit 존재 확인
+    if (outfitId) {
       const outfit = await tx.outfit.findFirst({
         where: { id: outfitId, userId: userId }
       });
 
-      if (outfit) {
-        await tx.outfitItem.create({
-          data: { 
-            outfitId: outfitId, 
-            itemId: item.id 
-          }
-        });
-        console.log(`✅ Item ${item.id} connected to Outfit ${outfitId}`);
-      } else {
-        console.warn(`⚠️ Outfit ${outfitId} not found or not owned by user ${userId}`);
+      if (!outfit) {
+        throw new InvalidInputError(`Outfit ${outfitId}를 찾을 수 없거나 권한이 없습니다.`);
       }
+    }
 
-      return item;
-    });
+    // 2. 모든 아이템 저장
+    for (const itemData of processedItems) {
+      const item = await tx.item.create({
+        data: {
+          image: itemData.imageUrl,
+          category: itemData.category || 0,
+          subcategory: itemData.subcategory || 0,
+          brand: itemData.brand || null,
+          color: itemData.color || 0,
+          size: itemData.size || null,
+          season: itemData.season || 0,
+          purchaseDate: itemData.purchaseDate || null,
+          isDeleted: false,
+          user: {
+            connect: { id: userId }
+          }
+        }
+      });
+
+      savedItems.push(item);
+    }
+
+    // 3. outfitId가 있으면 모든 아이템을 outfit에 연결
+    if (outfitId) {
+      const outfitItemsData = savedItems.map(item => ({
+        outfitId: outfitId,
+        itemId: item.id
+      }));
+
+      await tx.outfitItem.createMany({
+        data: outfitItemsData
+      });
+
+      console.log(`✅ ${savedItems.length} items connected to Outfit ${outfitId}`);
+    }
+
+    return savedItems;
+  });
+
+  // ✅ 단일 아이템이면 단일 응답, 배열이면 배열 응답
+  if (requestData.items && Array.isArray(requestData.items)) {
+    // 배열로 받았으면 배열로 응답
+    return {
+      savedCount: result.length,
+      items: result.map(item => ({
+        id: item.id,
+        image_url: item.image
+      })),
+      outfitId: outfitId
+    };
   } else {
-    // outfitId가 없으면 itemRepository 사용
-    result = await itemRepository.create({
-      userId,
-      image: imageUrl,
-      category: 0,
-      subcategory: 0,
-      brand: null,
-      color: 0,
-      size: null,
-      season: 0,
-      purchaseDate: null,
-      isDeleted: false,
-    });
+    // 단일로 받았으면 단일로 응답 (기존 호환성 유지)
+    return {
+      id: result[0].id,
+      image_url: result[0].image,
+      outfitId: outfitId
+    };
   }
-
-  return { id: result.id, image_url: imageUrl };
 };
 
 // ==========================================================
